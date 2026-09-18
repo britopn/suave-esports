@@ -1,0 +1,15 @@
+{
+  "name": "suave-esports-bot",
+  "version": "1.0.0",
+  "description": "Bot oficial da SUAVE ESPORTS",
+  "main": "bot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "discord.js": "^14.22.1",
+    "dotenv": "^17.2.2"
+  }
+}

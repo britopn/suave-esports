@@ -1,0 +1,14 @@
+# Segredos / variáveis de ambiente
+.env
+bot/.env
+
+# Node
+node_modules/
+bot/node_modules/
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db

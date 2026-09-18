@@ -1524,3 +1524,125 @@ footer {
     }
 
 }
+
+/* =========================================================
+   FIX — CARDS DO PLANTEL
+========================================================= */
+
+.players-track {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    align-items: stretch;
+}
+
+.players-track::-webkit-scrollbar {
+    display: none;
+}
+
+.player-card {
+    flex: 0 0 calc((100% - 48px) / 5);
+    min-width: calc((100% - 48px) / 5);
+    height: 350px;
+
+    position: relative;
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    background: #101813;
+    border: 1px solid rgba(242, 211, 151, .14);
+}
+
+.player-image {
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+    object-position: center;
+
+    z-index: 0;
+}
+
+.player-card::after {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    background:
+        linear-gradient(
+            to bottom,
+            transparent 40%,
+            rgba(9, 16, 13, .25) 58%,
+            rgba(9, 16, 13, .96) 100%
+        );
+
+    pointer-events: none;
+    z-index: 1;
+}
+
+.player-number {
+    position: absolute;
+    top: 14px;
+    right: 17px;
+
+    z-index: 2;
+
+    color: rgba(242, 211, 151, .22);
+
+    font-size: 52px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.player-info {
+    position: relative;
+    z-index: 2;
+
+    padding: 20px;
+}
+
+.player-info strong {
+    display: block;
+
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.player-info span {
+    display: inline-block;
+
+    margin-top: 8px;
+    padding: 5px 8px;
+
+    background: #9d1717;
+
+    font-family: "DM Mono", monospace;
+    font-size: 9px;
+}
+
+@media (max-width: 1000px) {
+
+    .player-card {
+        flex-basis: calc((100% - 24px) / 3);
+        min-width: calc((100% - 24px) / 3);
+    }
+
+}
+
+@media (max-width: 760px) {
+
+    .player-card {
+        flex-basis: 75%;
+        min-width: 75%;
+    }
+
+}
