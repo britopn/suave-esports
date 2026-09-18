@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SUAVE ESPORTS</title>
+    <meta name="description" content="Site oficial da SUAVE ESPORTS.">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="site-header">
+
+    <a class="brand" href="#inicio">
+        <img src="logo-suave.png" alt="SUAVE ESPORTS">
+
+        <div class="brand-name">
+            <strong>SUAVE</strong>
+            <span>ESPORTS</span>
+        </div>
+    </a>
+
+    <nav class="main-nav">
+        <a class="active" href="#inicio">INÍCIO</a>
+        <a href="#equipa">EQUIPA</a>
+        <a href="#plantel">PLANTEL</a>
+        <a href="#calendario">CALENDÁRIO</a>
+        <a href="#estatisticas">ESTATÍSTICAS</a>
+    </nav>
+
+    <a class="discord-button" href="#" target="_blank">
+        DISCORD
+    </a>
+
+</header>
+
+
+<main>
+
+    <!-- ==================================================
+         HERO
+    =================================================== -->
+
+    <section class="hero" id="inicio">
+
+        <div class="hero-copy">
+
+            <div class="eyebrow">
+                SUAVE ESPORTS · PORTUGAL
+            </div>
+
+            <h1>
+                FUTEBOL<br>
+                NÃO É<br>
+                PARA<br>
+                <span>REIZINHOS.</span>
+            </h1>
+
+            <p>
+                A casa competitiva da SUAVE.
+                Pro Clubs, competição e uma quantidade
+                perfeitamente desnecessária de confiança.
+            </p>
+
+            <div class="hero-actions">
+
+                <a href="#equipa" class="button button-primary">
+                    CONHECER A EQUIPA
+                </a>
+
+                <a href="#calendario" class="button button-secondary">
+                    VER CALENDÁRIO
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <div class="hero-visual">
+
+            <div class="hero-word">
+                SUAVE
+            </div>
+
+            <img
+                src="logo-suave.png"
+                alt="Emblema SUAVE FC"
+                class="hero-logo"
+            >
+
+            <div class="hero-season">
+                <span>PRO CLUBS</span>
+                <strong>2026</strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================================
+         MATCH CENTER
+    =================================================== -->
+
+    <section class="match-center" id="calendario">
+
+        <!-- PRÓXIMO JOGO -->
+
+        <div class="featured-match">
+
+            <div class="featured-label">
+                <span>PRÓXIMO JOGO</span>
+                <strong id="next-game-date">A DEFINIR</strong>
+            </div>
+
+            <div class="featured-teams">
+
+                <div class="featured-team suave-team">
+                    <img src="logo-suave.png" alt="SUAVE FC">
+                    <strong>SUAVE FC</strong>
+                </div>
+
+                <div class="featured-vs">
+                    VS
+                </div>
+
+                <div class="featured-team opponent-team">
+
+                    <div
+                        class="featured-opponent-logo placeholder-logo"
+                        id="next-game-opponent-logo"
+                    >
+                        ?
+                    </div>
+
+                    <strong id="next-game-opponent">
+                        TBA
+                    </strong>
+
+                </div>
+
+            </div>
+
+            <div class="featured-meta">
+
+                <span id="next-game-competition">
+                    PRO CLUBS
+                </span>
+
+                <a href="#full-calendar">
+                    CALENDÁRIO COMPLETO →
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- RESUMO -->
+
+        <div class="match-summary">
+
+            <!-- A SEGUIR -->
+
+            <div class="summary-panel">
+
+                <div class="summary-heading">
+                    <div>
+                        <span class="section-kicker">AGENDA</span>
+                        <h2>A SEGUIR</h2>
+                    </div>
+
+                    <div class="mini-controls">
+                        <button id="games-prev" aria-label="Anterior">←</button>
+                        <button id="games-next" aria-label="Seguinte">→</button>
+                    </div>
+                </div>
+
+                <div
+                    class="compact-games"
+                    id="upcoming-games"
+                ></div>
+
+            </div>
+
+
+            <!-- ÚLTIMOS RESULTADOS -->
+
+            <div class="summary-panel">
+
+                <div class="summary-heading">
+                    <div>
+                        <span class="section-kicker">FINALIZADOS</span>
+                        <h2>RESULTADOS</h2>
+                    </div>
+                </div>
+
+                <div
+                    class="compact-results"
+                    id="recent-results"
+                ></div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================================
+         EQUIPA
+    =================================================== -->
+
+    <section class="team-feature" id="equipa">
+
+        <div class="team-background-text">
+            SUAVE
+        </div>
+
+        <div class="team-copy">
+
+            <span class="section-kicker">
+                PRO CLUBS
+            </span>
+
+            <h2>
+                SUAVE<br>
+                FC
+            </h2>
+
+            <p>
+                A primeira equipa da SUAVE ESPORTS.
+                O projeto competitivo começa aqui.
+            </p>
+
+            <a href="#plantel" class="button button-secondary">
+                CONHECER O PLANTEL
+            </a>
+
+        </div>
+
+        <div class="team-crest">
+
+            <img src="logo-suave.png" alt="SUAVE FC">
+
+            <span>
+                SUAVE FOOTBALL CLUB
+            </span>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================================
+         PLANTEL
+    =================================================== -->
+
+    <section class="section squad-section" id="plantel">
+
+        <div class="section-heading">
+
+            <div>
+                <span class="section-kicker">
+                    SUAVE FC
+                </span>
+
+                <h2>PLANTEL</h2>
+            </div>
+
+            <div class="carousel-controls">
+
+                <button
+                    class="carousel-button"
+                    id="players-prev"
+                    aria-label="Jogadores anteriores"
+                >
+                    ←
+                </button>
+
+                <button
+                    class="carousel-button"
+                    id="players-next"
+                    aria-label="Jogadores seguintes"
+                >
+                    →
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="players-viewport">
+            <div
+                class="players-track"
+                id="players-track"
+            ></div>
+        </div>
+
+    </section>
+
+
+    <!-- ==================================================
+         CLASSIFICAÇÃO + ESTATÍSTICAS
+    =================================================== -->
+
+    <section class="section dashboard-section" id="estatisticas">
+
+        <div class="dashboard-grid">
+
+            <div class="standings-panel">
+
+                <div class="section-heading compact">
+
+                    <div>
+                        <span class="section-kicker">
+                            COMPETIÇÃO
+                        </span>
+
+                        <h2>CLASSIFICAÇÃO</h2>
+                    </div>
+
+                </div>
+
+                <div class="standings-table">
+
+                    <div class="standings-row standings-header">
+                        <span>#</span>
+                        <span>EQUIPA</span>
+                        <span>J</span>
+                        <span>V</span>
+                        <span>E</span>
+                        <span>D</span>
+                        <span>PTS</span>
+                    </div>
+
+                    <div id="standings-body"></div>
+
+                </div>
+
+            </div>
+
+
+            <div class="statistics-panel">
+
+                <div class="section-heading compact">
+
+                    <div>
+                        <span class="section-kicker">
+                            TEMPORADA
+                        </span>
+
+                        <h2>OS NÚMEROS</h2>
+                    </div>
+
+                </div>
+
+                <div
+                    class="stats-grid"
+                    id="stats-grid"
+                ></div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================================
+         FINAL
+    =================================================== -->
+
+    <section class="closing-section">
+
+        <div>
+            <span class="section-kicker">
+                SUAVE ESPORTS
+            </span>
+
+            <h2>
+                JOGA COM CALMA.<br>
+                <span>SEMPRE SUAVE.</span>
+            </h2>
+        </div>
+
+        <img
+            src="logo-suave.png"
+            alt="SUAVE FC"
+        >
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    <div class="footer-brand">
+
+        <img src="logo-suave.png" alt="SUAVE">
+
+        <div>
+            <strong>SUAVE ESPORTS</strong>
+            <span>PORTUGAL · 2026</span>
+        </div>
+
+    </div>
+
+    <div class="footer-line">
+        FUTEBOL NÃO É PARA REIZINHOS.
+    </div>
+
+</footer>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>
