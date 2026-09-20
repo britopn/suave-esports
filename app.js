@@ -29,7 +29,7 @@ const suaveSupabase =
 const suaveData = {
 
     team: {
-        name: "SUAVE FC",
+        name: "SUAVEMENTE FC",
         logo: "logo-suave.png"
     },
 
@@ -287,6 +287,242 @@ async function loadPlayers() {
 
 }
 
+/* =========================================================
+   4. CARREGAR RESULTADOS DO SUPABASE
+========================================================= */
+
+async function loadResults() {
+
+    const leagueContainer =
+        document.getElementById(
+            "league-results"
+        );
+
+    const otherContainer =
+        document.getElementById(
+            "other-results"
+        );
+
+
+    const loadingHTML = `
+        <article class="match-card">
+            <div class="match-meta">
+                A CARREGAR RESULTADOS...
+            </div>
+        </article>
+    `;
+
+
+    if (leagueContainer) {
+        leagueContainer.innerHTML =
+            loadingHTML;
+    }
+
+
+    if (otherContainer) {
+        otherContainer.innerHTML =
+            loadingHTML;
+    }
+
+
+    try {
+
+        const {
+            data,
+            error
+        } = await suaveSupabase
+
+            .from("match_series")
+
+            .select(`
+                id,
+                opponent_name,
+                opponent_logo_url,
+                competition,
+                format,
+                played_at,
+                suave_series_score,
+                opponent_series_score,
+                status
+            `)
+
+            .eq(
+                "status",
+                "completed"
+            )
+
+            .order(
+                "played_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        suaveData.results =
+            (data || []).map(
+                series => {
+
+                    let date =
+                        "—";
+
+
+                    if (series.played_at) {
+
+                        const parsedDate =
+                            new Date(
+                                series.played_at
+                            );
+
+
+                        date =
+                            parsedDate
+                                .toLocaleDateString(
+                                    "pt-PT",
+                                    {
+                                        day:
+                                            "2-digit",
+
+                                        month:
+                                            "short"
+                                    }
+                                )
+                                .replace(
+                                    ".",
+                                    ""
+                                )
+                                .toUpperCase();
+
+                    }
+
+
+                    const competition =
+                        String(
+                            series.competition ||
+                            ""
+                        )
+                        .trim()
+                        .toUpperCase();
+
+
+                    const format =
+                        String(
+                            series.format ||
+                            ""
+                        )
+                        .trim()
+                        .toUpperCase();
+
+
+                    const isLeagueMatch =
+                        competition ===
+                            "PRO CLUBS" &&
+                        format ===
+                            "LEAGUE MATCH";
+
+
+                    return {
+
+                        id:
+                            series.id,
+
+                        date,
+
+                        opponent:
+                            series.opponent_name,
+
+                        competition,
+
+                        format,
+
+                        competitionLabel:
+                            `${competition} · ${format}`,
+
+                        suaveScore:
+                            series.suave_series_score,
+
+                        opponentScore:
+                            series.opponent_series_score,
+
+                        opponentLogo:
+                            series.opponent_logo_url ||
+                            null,
+
+                        isLeagueMatch
+
+                    };
+
+                }
+            );
+
+
+        console.log(
+            `✅ Resultados carregados: ${suaveData.results.length}`
+        );
+
+
+        console.log(
+            `⚽ League Matches: ${
+                suaveData.results.filter(
+                    game =>
+                        game.isLeagueMatch
+                ).length
+            }`
+        );
+
+
+        console.log(
+            `🏆 Outros resultados: ${
+                suaveData.results.filter(
+                    game =>
+                        !game.isLeagueMatch
+                ).length
+            }`
+        );
+
+
+        renderResults();
+
+        renderStats();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "❌ Erro ao carregar resultados do Supabase:",
+            error
+        );
+
+
+        const errorHTML = `
+            <article class="match-card">
+                <div class="match-meta">
+                    RESULTADOS INDISPONÍVEIS
+                </div>
+            </article>
+        `;
+
+
+        if (leagueContainer) {
+            leagueContainer.innerHTML =
+                errorHTML;
+        }
+
+
+        if (otherContainer) {
+            otherContainer.innerHTML =
+                errorHTML;
+        }
+
+    }
+
+}
 
 /* =========================================================
    4. HELPERS
@@ -520,110 +756,657 @@ function renderUpcomingGames() {
 
 function renderResults() {
 
-    const container =
+    const leagueContainer =
         document.getElementById(
-            "recent-results"
+            "league-results"
+        );
+
+    const otherContainer =
+        document.getElementById(
+            "other-results"
         );
 
 
-    container.innerHTML = "";
+    if (!leagueContainer || !otherContainer) {
+        return;
+    }
 
 
-    suaveData.results
-        .slice(0, 3)
-        .forEach(game => {
-
-            const status =
-                getResultStatus(game);
+    leagueContainer.innerHTML = "";
+    otherContainer.innerHTML = "";
 
 
-            const card =
-                document.createElement(
-                    "article"
+    const leagueResults =
+        suaveData.results.filter(
+            game =>
+                game.isLeagueMatch
+        );
+
+
+    const otherResults =
+        suaveData.results.filter(
+            game =>
+                !game.isLeagueMatch
+        );
+
+
+    function createResultCard(game) {
+
+        const status =
+            getResultStatus(game);
+
+
+        const card =
+            document.createElement(
+                "article"
+            );
+
+
+        card.className =
+            "match-card";
+
+
+        card.dataset.seriesId =
+            game.id;
+
+
+        card.innerHTML = `
+
+            <div class="match-meta">
+
+                RESULTADO FINAL ·
+                ${game.date} ·
+                ${game.competitionLabel}
+
+            </div>
+
+
+            <div class="match">
+
+                <div class="club">
+
+                    <img
+                        src="${suaveData.team.logo}"
+                        alt="${suaveData.team.name}"
+                    >
+
+                    <span>
+                        ${suaveData.team.name}
+                    </span>
+
+                </div>
+
+
+                <div class="score">
+
+                    <strong>
+                        ${game.suaveScore}
+                    </strong>
+
+                    <span>
+                        ×
+                    </span>
+
+                    <strong>
+                        ${game.opponentScore}
+                    </strong>
+
+                </div>
+
+
+                <div class="club opponent">
+
+                    ${opponentLogoHTML(game)}
+
+                    <span>
+                        ${game.opponent}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="
+                    match-status
+                    ${status.className}
+                "
+            >
+                ${status.text}
+            </div>
+
+        `;
+
+card.addEventListener(
+    "click",
+    async () => {
+
+        // Se já está aberto, volta ao resultado normal
+if (card.classList.contains("details-open")) {
+
+    card.classList.remove(
+        "details-open"
+    );
+
+    card.innerHTML =
+        card.dataset.originalHtml;
+
+    card.style.width = "";
+    card.style.minWidth = "";
+    card.style.maxWidth = "";
+
+    card.style.height = "";
+    card.style.minHeight = "";
+    card.style.maxHeight = "";
+
+    return;
+}
+
+
+        // Guardar o card original
+        card.dataset.originalHtml =
+            card.innerHTML;
+
+            // Guardar exatamente o tamanho atual do card
+const cardRect =
+    card.getBoundingClientRect();
+
+card.style.width =
+    `${cardRect.width}px`;
+
+card.style.minWidth =
+    `${cardRect.width}px`;
+
+card.style.maxWidth =
+    `${cardRect.width}px`;
+
+card.style.height =
+    `${cardRect.height}px`;
+
+card.style.minHeight =
+    `${cardRect.height}px`;
+
+card.style.maxHeight =
+    `${cardRect.height}px`;
+
+            
+
+
+        // Feedback enquanto carrega
+        card.innerHTML = `
+            <div class="match-meta">
+                A CARREGAR DETALHES...
+            </div>
+        `;
+
+
+        const details =
+            await openMatchDetails(
+                game.id
+            );
+
+
+        if (!details) {
+
+            card.innerHTML =
+                card.dataset.originalHtml;
+
+            return;
+        }
+
+
+        const {
+            series,
+            matches,
+            playerStats
+        } = details;
+
+
+        // ==========================================
+// NOME VISÍVEL DO JOGADOR
+// ==========================================
+
+const getPlayerName = player => {
+
+    if (player.player_id) {
+
+        const squadPlayer =
+            suaveData.players.find(
+                squadPlayer =>
+                    Number(squadPlayer.id) ===
+                    Number(player.player_id)
+            );
+
+        if (squadPlayer) {
+            return squadPlayer.name;
+        }
+
+    }
+
+    return player.ea_name;
+};
+
+        // ==========================================
+        // MARCADORES
+        // ==========================================
+
+        const scorers =
+            playerStats
+                .filter(
+                    player =>
+                        Number(player.goals) > 0
+                )
+                .map(
+                    player =>
+                        `${getPlayerName(player)} ×${player.goals}`
                 );
 
 
-            card.className =
-                "match-card";
+        // ==========================================
+        // ASSISTÊNCIAS
+        // ==========================================
+
+        const assists =
+            playerStats
+                .filter(
+                    player =>
+                        Number(player.assists) > 0
+                )
+                .map(
+                    player =>
+                        `${getPlayerName(player)} ×${player.assists}`
+                );
 
 
-            card.innerHTML = `
+        // ==========================================
+        // MVP
+        // ==========================================
+
+        const mvp =
+            [...playerStats]
+                .sort(
+                    (a, b) =>
+                        Number(b.rating || 0) -
+                        Number(a.rating || 0)
+                )[0];
+
+        // ==========================================
+        // JOGOS DA SÉRIE
+        // ==========================================
+
+        const gamesHTML =
+            matches.length > 1
+
+                ? matches
+                    .map(
+                        match => `
+                            <div class="result-detail-game">
+                                <span>
+                                    JOGO ${match.game_number}
+                                </span>
+
+                                <strong>
+                                    ${match.suave_score}
+                                    ×
+                                    ${match.opponent_score}
+                                </strong>
+                            </div>
+                        `
+                    )
+                    .join("")
+
+                : "";
+
+
+        card.classList.add(
+            "details-open"
+        );
+
+
+        card.innerHTML = `
+
+            <div class="match-meta">
+                ${game.date} ·
+                ${series.competition} ·
+                ${series.format}
+            </div>
+
+
+            <div class="result-detail-score">
+
+                <strong>
+                    ${series.suave_series_score}
+                    ×
+                    ${series.opponent_series_score}
+                </strong>
+
+                <span>
+                    ${series.opponent_name}
+                </span>
+
+            </div>
+
+
+            ${
+                gamesHTML
+                    ? `
+                        <div class="result-detail-games">
+                            ${gamesHTML}
+                        </div>
+                    `
+                    : ""
+            }
+
+
+            <div class="result-detail-info">
+
+                <div>
+                    <span>GOLOS</span>
+
+                    <strong>
+                        ${
+                            scorers.length
+                                ? scorers.join(" · ")
+                                : "—"
+                        }
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>ASSISTÊNCIAS</span>
+
+                    <strong>
+                        ${
+                            assists.length
+                                ? assists.join(" · ")
+                                : "—"
+                        }
+                    </strong>
+                </div>
+
+
+                <div>
+                    <span>MVP</span>
+
+                    <strong>
+                        ${
+                            mvp
+                                ? `${getPlayerName(mvp)} · ${mvp.rating}`
+                                : "—"
+                        }
+                    </strong>
+                </div>
+
+            </div>
+
+
+            <div class="result-detail-back">
+                ← VOLTAR AO RESULTADO
+            </div>
+
+        `;
+
+    }
+);      
+
+        
+        return card;
+
+    }
+
+
+    // ==================================================
+    // PRO CLUBS · LEAGUE MATCH
+    // ==================================================
+
+    if (leagueResults.length === 0) {
+
+        leagueContainer.innerHTML = `
+
+            <article class="match-card">
 
                 <div class="match-meta">
-
-                    ENCERRADO ·
-                    ${game.date} ·
-                    ${game.competition}
-
+                    SEM LEAGUE MATCHES
                 </div>
 
+            </article>
 
-                <div class="match">
+        `;
 
-                    <div class="club">
+    }
 
-                        <img
-                            src="${suaveData.team.logo}"
-                            alt="${suaveData.team.name}"
-                        >
+    else {
 
-                        <span>
-                            ${suaveData.team.name}
-                        </span>
+        leagueResults.forEach(
+            game => {
 
-                    </div>
+                leagueContainer.appendChild(
+                    createResultCard(game)
+                );
 
+            }
+        );
 
-                    <div class="score">
-
-                        <strong>
-                            ${game.suaveScore}
-                        </strong>
-
-                        <span>
-                            ×
-                        </span>
-
-                        <strong>
-                            ${game.opponentScore}
-                        </strong>
-
-                    </div>
+    }
 
 
-                    <div class="club opponent">
+    // ==================================================
+    // OUTROS RESULTADOS
+    // ==================================================
 
-                        ${opponentLogoHTML(game)}
+    if (otherResults.length === 0) {
 
-                        <span>
-                            ${game.opponent}
-                        </span>
+        otherContainer.innerHTML = `
 
-                    </div>
+            <article class="match-card">
 
+                <div class="match-meta">
+                    SEM OUTROS RESULTADOS
                 </div>
 
+            </article>
 
-                <div
-                    class="
-                        match-status
-                        ${status.className}
-                    "
-                >
-                    ${status.text}
-                </div>
+        `;
 
-            `;
+    }
 
+    else {
 
-            container.appendChild(
-                card
-            );
+        otherResults.forEach(
+            game => {
 
-        });
+                otherContainer.appendChild(
+                    createResultCard(game)
+                );
+
+            }
+        );
+
+    }
 
 }
 
+/* =========================================================
+   8. DETALHES DE UM RESULTADO
+========================================================= */
+
+async function openMatchDetails(seriesId) {
+
+    console.log(
+        `🔎 A carregar série ${seriesId}...`
+    );
+
+
+    try {
+
+        // ----------------------------------------------
+        // DADOS DA SÉRIE
+        // ----------------------------------------------
+
+        const {
+            data: series,
+            error: seriesError
+        } = await suaveSupabase
+            .from("match_series")
+            .select(`
+                id,
+                opponent_name,
+                opponent_logo_url,
+                competition,
+                format,
+                played_at,
+                suave_series_score,
+                opponent_series_score,
+                status
+            `)
+            .eq(
+                "id",
+                seriesId
+            )
+            .single();
+
+
+        if (seriesError) {
+            throw seriesError;
+        }
+
+
+        // ----------------------------------------------
+        // JOGOS DA SÉRIE
+        // ----------------------------------------------
+
+        const {
+            data: matches,
+            error: matchesError
+        } = await suaveSupabase
+            .from("matches")
+            .select(`
+                id,
+                game_number,
+                suave_score,
+                opponent_score,
+                suave_shots_on_target,
+                opponent_shots_on_target,
+                suave_red_cards,
+                opponent_red_cards,
+                suave_saves,
+                opponent_saves,
+                suave_tackles,
+                opponent_tackles,
+                suave_passes,
+                opponent_passes,
+                ea_match_id,
+                match_type
+            `)
+            .eq(
+                "series_id",
+                seriesId
+            )
+            .order(
+                "game_number",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (matchesError) {
+            throw matchesError;
+        }
+
+
+        const matchIds =
+            (matches || [])
+                .map(
+                    match =>
+                        match.id
+                );
+
+
+        let playerStats = [];
+
+
+        // ----------------------------------------------
+        // ESTATÍSTICAS DOS JOGADORES
+        // ----------------------------------------------
+
+        if (matchIds.length > 0) {
+
+            const {
+                data,
+                error
+            } = await suaveSupabase
+                .from("match_player_stats")
+                .select(`
+                    id,
+                    match_id,
+                    player_id,
+                    ea_name,
+                    position,
+                    goals,
+                    assists,
+                    shots,
+                    tackles,
+                    tackle_attempts,
+                    passes_made,
+                    pass_attempts,
+                    saves,
+                    goals_conceded,
+                    red_cards,
+                    rating,
+                    man_of_the_match
+                `)
+                .in(
+                    "match_id",
+                    matchIds
+                );
+
+
+            if (error) {
+                throw error;
+            }
+
+
+            playerStats =
+                data || [];
+
+        }
+
+
+        console.log(
+    "✅ DETALHES DA SÉRIE:",
+    {
+        series,
+        matches,
+        playerStats
+    }
+);
+
+
+return {
+    series,
+    matches:
+        matches || [],
+    playerStats
+};
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "❌ Erro ao carregar detalhes do resultado:",
+            error
+        );
+
+
+        return null;
+
+    }
+
+}
 
 /* =========================================================
    8. PLANTEL
@@ -1117,11 +1900,15 @@ function renderStats() {
 
 function setupCarousels() {
 
-    const games =
+    const leagueResults =
         document.getElementById(
-            "upcoming-games"
+            "league-results"
         );
 
+    const otherResults =
+        document.getElementById(
+            "other-results"
+        );
 
     const players =
         document.getElementById(
@@ -1129,88 +1916,169 @@ function setupCarousels() {
         );
 
 
-    document
-        .getElementById(
-            "games-next"
-        )
-        .addEventListener(
+    // ==================================================
+    // LEAGUE MATCHES
+    // ==================================================
+
+    const leagueNext =
+        document.getElementById(
+            "league-results-next"
+        );
+
+    const leaguePrev =
+        document.getElementById(
+            "league-results-prev"
+        );
+
+
+    if (
+        leagueResults &&
+        leagueNext
+    ) {
+
+        leagueNext.addEventListener(
             "click",
             () => {
 
-                games.scrollBy({
-
+                leagueResults.scrollBy({
                     left: 450,
-
-                    behavior:
-                        "smooth"
-
+                    behavior: "smooth"
                 });
 
             }
         );
 
+    }
 
-    document
-        .getElementById(
-            "games-prev"
-        )
-        .addEventListener(
+
+    if (
+        leagueResults &&
+        leaguePrev
+    ) {
+
+        leaguePrev.addEventListener(
             "click",
             () => {
 
-                games.scrollBy({
-
+                leagueResults.scrollBy({
                     left: -450,
-
-                    behavior:
-                        "smooth"
-
+                    behavior: "smooth"
                 });
 
             }
         );
 
+    }
 
-    document
-        .getElementById(
+
+    // ==================================================
+    // OUTROS RESULTADOS
+    // ==================================================
+
+    const otherNext =
+        document.getElementById(
+            "other-results-next"
+        );
+
+    const otherPrev =
+        document.getElementById(
+            "other-results-prev"
+        );
+
+
+    if (
+        otherResults &&
+        otherNext
+    ) {
+
+        otherNext.addEventListener(
+            "click",
+            () => {
+
+                otherResults.scrollBy({
+                    left: 450,
+                    behavior: "smooth"
+                });
+
+            }
+        );
+
+    }
+
+
+    if (
+        otherResults &&
+        otherPrev
+    ) {
+
+        otherPrev.addEventListener(
+            "click",
+            () => {
+
+                otherResults.scrollBy({
+                    left: -450,
+                    behavior: "smooth"
+                });
+
+            }
+        );
+
+    }
+
+
+    // ==================================================
+    // PLANTEL
+    // ==================================================
+
+    const playersNext =
+        document.getElementById(
             "players-next"
-        )
-        .addEventListener(
-            "click",
-            () => {
-
-                players.scrollBy({
-
-                    left: 350,
-
-                    behavior:
-                        "smooth"
-
-                });
-
-            }
         );
 
-
-    document
-        .getElementById(
+    const playersPrev =
+        document.getElementById(
             "players-prev"
-        )
-        .addEventListener(
+        );
+
+
+    if (
+        players &&
+        playersNext
+    ) {
+
+        playersNext.addEventListener(
             "click",
             () => {
 
                 players.scrollBy({
-
-                    left: -350,
-
-                    behavior:
-                        "smooth"
-
+                    left: 350,
+                    behavior: "smooth"
                 });
 
             }
         );
+
+    }
+
+
+    if (
+        players &&
+        playersPrev
+    ) {
+
+        playersPrev.addEventListener(
+            "click",
+            () => {
+
+                players.scrollBy({
+                    left: -350,
+                    behavior: "smooth"
+                });
+
+            }
+        );
+
+    }
 
 }
 
@@ -1399,29 +2267,31 @@ document.addEventListener(
     "DOMContentLoaded",
     async () => {
 
+        // Próximo jogo
         renderNextGameStrip();
 
-        renderUpcomingGames();
 
-        renderResults();
-
+        // Classificação
         renderStandings();
 
-        renderStats();
 
+        // Resultados reais do Supabase
+        await loadResults();
+
+
+        // Carrosséis
         setupCarousels();
 
+
+        // Arrastar plantel com rato
         setupPlayerDrag();
 
+
+        // Navegação
         setupNavigation();
 
 
-        /* -----------------------------------------------
-           PLANTEL REAL
-
-           É carregado por último porque vem da Internet.
-        ------------------------------------------------ */
-
+        // Plantel real do Supabase
         await loadPlayers();
 
     }

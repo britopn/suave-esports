@@ -102,31 +102,57 @@
     </section>
 
 
-    <!-- ==================================================
+     <!-- ==================================================
          MATCH CENTER
     =================================================== -->
 
     <section class="match-center" id="calendario">
 
-        <!-- PRÓXIMO JOGO -->
+        <!-- ==================================================
+             PRÓXIMO JOGO
+        =================================================== -->
 
         <div class="featured-match">
 
             <div class="featured-label">
-                <span>PRÓXIMO JOGO</span>
-                <strong id="next-game-date">A DEFINIR</strong>
+
+                <span>
+                    PRÓXIMO JOGO
+                </span>
+
+                <strong id="next-game-date">
+                    A DEFINIR
+                </strong>
+
             </div>
+
 
             <div class="featured-teams">
 
+                <!-- SUAVEMENTE FC -->
+
                 <div class="featured-team suave-team">
-                    <img src="logo-suave.png" alt="SUAVE FC">
-                    <strong>SUAVE FC</strong>
+
+                    <img
+                        src="logo-suave.png"
+                        alt="SUAVEMENTE FC"
+                    >
+
+                    <strong>
+                        SUAVEMENTE FC
+                    </strong>
+
                 </div>
+
+
+                <!-- VS -->
 
                 <div class="featured-vs">
                     VS
                 </div>
+
+
+                <!-- ADVERSÁRIO -->
 
                 <div class="featured-team opponent-team">
 
@@ -145,6 +171,7 @@
 
             </div>
 
+
             <div class="featured-meta">
 
                 <span id="next-game-competition">
@@ -160,56 +187,123 @@
         </div>
 
 
-        <!-- RESUMO -->
+        <!-- ==================================================
+             RESULTADOS
+        =================================================== -->
 
-        <div class="match-summary">
+        <div class="results-center">
 
-            <!-- A SEGUIR -->
 
-            <div class="summary-panel">
+            <!-- ==================================================
+                 PRO CLUBS · LEAGUE MATCH
+            =================================================== -->
+
+            <div class="results-section">
 
                 <div class="summary-heading">
+
                     <div>
-                        <span class="section-kicker">AGENDA</span>
-                        <h2>A SEGUIR</h2>
+
+                        <span class="section-kicker">
+                            EA SPORTS FC
+                        </span>
+
+                        <h2>
+                            PRO CLUBS · LEAGUE MATCH
+                        </h2>
+
                     </div>
+
 
                     <div class="mini-controls">
-                        <button id="games-prev" aria-label="Anterior">←</button>
-                        <button id="games-next" aria-label="Seguinte">→</button>
+
+                        <button
+                            id="league-results-prev"
+                            aria-label="Resultado anterior"
+                        >
+                            ←
+                        </button>
+
+                        <button
+                            id="league-results-next"
+                            aria-label="Resultado seguinte"
+                        >
+                            →
+                        </button>
+
                     </div>
+
                 </div>
 
-                <div
-                    class="compact-games"
-                    id="upcoming-games"
-                ></div>
+
+                <div class="results-viewport">
+
+                    <div
+                        class="compact-results results-track"
+                        id="league-results"
+                    ></div>
+
+                </div>
 
             </div>
 
 
-            <!-- ÚLTIMOS RESULTADOS -->
+            <!-- ==================================================
+                 OUTROS RESULTADOS
+            =================================================== -->
 
-            <div class="summary-panel">
+            <div class="results-section">
 
                 <div class="summary-heading">
+
                     <div>
-                        <span class="section-kicker">FINALIZADOS</span>
-                        <h2>RESULTADOS</h2>
+
+                        <span class="section-kicker">
+                            TORNEIOS · AMIGÁVEIS
+                        </span>
+
+                        <h2>
+                            OUTROS RESULTADOS
+                        </h2>
+
                     </div>
+
+
+                    <div class="mini-controls">
+
+                        <button
+                            id="other-results-prev"
+                            aria-label="Resultado anterior"
+                        >
+                            ←
+                        </button>
+
+                        <button
+                            id="other-results-next"
+                            aria-label="Resultado seguinte"
+                        >
+                            →
+                        </button>
+
+                    </div>
+
                 </div>
 
-                <div
-                    class="compact-results"
-                    id="recent-results"
-                ></div>
+
+                <div class="results-viewport">
+
+                    <div
+                        class="compact-results results-track"
+                        id="other-results"
+                    ></div>
+
+                </div>
 
             </div>
 
         </div>
 
     </section>
-
 
     <!-- ==================================================
          EQUIPA
@@ -416,7 +510,6 @@
     </div>
 
 </footer>
-
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
