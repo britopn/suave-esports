@@ -592,72 +592,251 @@ function getResultStatus(game) {
    5. PRÓXIMO JOGO — BARRA DO HERO
 ========================================================= */
 
-function renderNextGameStrip() {
 
-    const game =
-        suaveData.upcomingGames[0];
+async function renderNextGameStrip() {
 
+    const date =
+        document.getElementById(
+            "next-game-date"
+        );
 
-    if (!game) {
+    const opponent =
+        document.getElementById(
+            "next-game-opponent"
+        );
 
-        document
-            .getElementById("next-game-date")
-            .textContent =
-            "SEM JOGOS AGENDADOS";
+    const competition =
+        document.getElementById(
+            "next-game-competition"
+        );
 
-
-        document
-            .getElementById("next-game-opponent")
-            .textContent =
-            "TBA";
-
-
-        return;
-
-    }
-
-
-    document
-        .getElementById("next-game-date")
-        .innerHTML =
-        `${game.date} · ${game.time}`;
-
-
-    document
-        .getElementById("next-game-opponent")
-        .textContent =
-        game.opponent;
-
-
-    document
-        .getElementById("next-game-competition")
-        .textContent =
-        game.competition;
-
-
-    const logoContainer =
+    const logo =
         document.getElementById(
             "next-game-opponent-logo"
         );
 
 
-    if (game.opponentLogo) {
+    if (
+        !date ||
+        !opponent ||
+        !competition
+    ) {
+        return;
+    }
 
-        logoContainer.outerHTML = `
-            <img
-                id="next-game-opponent-logo"
-                class="featured-opponent-logo"
-                src="${game.opponentLogo}"
-                alt="${game.opponent}"
-            >
-        `;
+
+    // Encontrar o cartão inteiro do PRÓXIMO JOGO
+    const strip =
+        date.closest(
+            ".featured-match"
+        );
+
+
+    // Por defeito fica escondido.
+    // Só aparece se existir realmente um jogo futuro.
+    if (strip) {
+        strip.style.display =
+            "none";
+    }
+
+
+    try {
+
+        const agora =
+            new Date().toISOString();
+
+
+        const {
+            data: jogo,
+            error
+        } = await suaveSupabase
+
+            .from(
+                "scheduled_matches"
+            )
+
+            .select(`
+                id,
+                opponent_name,
+                opponent_logo_url,
+                competition,
+                scheduled_at,
+                status
+            `)
+
+            .eq(
+                "status",
+                "scheduled"
+            )
+
+            .gte(
+                "scheduled_at",
+                agora
+            )
+
+            .order(
+                "scheduled_at",
+                {
+                    ascending: true
+                }
+            )
+
+            .limit(1)
+
+            .maybeSingle();
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        // Não há nenhum jogo marcado.
+        // O bloco continua completamente escondido.
+        if (!jogo) {
+
+            console.log(
+                "📅 Nenhum próximo jogo marcado."
+            );
+
+            return;
+        }
+
+
+        const scheduledDate =
+            new Date(
+                jogo.scheduled_at
+            );
+
+
+        const dataFormatada =
+            scheduledDate
+                .toLocaleDateString(
+                    "pt-PT",
+                    {
+                        day:
+                            "2-digit",
+
+                        month:
+                            "short"
+                    }
+                )
+                .replace(
+                    ".",
+                    ""
+                )
+                .toUpperCase();
+
+
+        const horaFormatada =
+            scheduledDate
+                .toLocaleTimeString(
+                    "pt-PT",
+                    {
+                        hour:
+                            "2-digit",
+
+                        minute:
+                            "2-digit"
+                    }
+                );
+
+
+        date.textContent =
+            `${dataFormatada} · ${horaFormatada}`;
+
+
+        opponent.textContent =
+            jogo.opponent_name;
+
+
+        competition.textContent =
+            jogo.competition;
+
+
+        // ==========================================
+        // LOGO DO ADVERSÁRIO
+        // ==========================================
+
+        if (logo) {
+
+            if (
+                jogo.opponent_logo_url
+            ) {
+
+                if (
+                    logo.tagName ===
+                    "IMG"
+                ) {
+
+                    logo.src =
+                        jogo.opponent_logo_url;
+
+                }
+
+                else {
+
+                    logo.innerHTML = `
+                        <img
+                            src="${jogo.opponent_logo_url}"
+                            alt="${jogo.opponent_name}"
+                        >
+                    `;
+
+                }
+
+
+                logo.style.display =
+                    "";
+
+            }
+
+            else {
+
+                // Sem logo:
+                // não inventamos nenhum.
+                logo.style.display =
+                    "none";
+
+            }
+
+        }
+
+
+        // Agora sim existe jogo:
+        // mostramos o bloco.
+        if (strip) {
+
+            strip.style.display =
+                "";
+
+        }
+
+
+        console.log(
+            "📅 Próximo jogo:",
+            jogo.opponent_name,
+            scheduledDate
+        );
 
     }
 
-    else {
+    catch (error) {
 
-        logoContainer.textContent =
-            game.opponent.charAt(0);
+        console.error(
+            "❌ Erro ao carregar próximo jogo:",
+            error
+        );
+
+
+        // Se houver erro, não mostramos
+        // informação falsa ou desatualizada.
+        if (strip) {
+
+            strip.style.display =
+                "none";
+
+        }
 
     }
 
@@ -1572,85 +1751,115 @@ Assistências: ${player.assists}`
    9. CLASSIFICAÇÃO
 ========================================================= */
 
-function renderStandings() {
+async function renderStandings() {
 
-    const container =
+const divisionLogo =
+    document.getElementById(
+        "division-logo"
+    );
+
+    const clubName =
         document.getElementById(
-            "standings-body"
+            "division-club-name"
+        );
+
+    const skillRating =
+        document.getElementById(
+            "division-skill-rating"
         );
 
 
-    container.innerHTML = "";
+ if (
+    !divisionLogo ||
+    !clubName ||
+    !skillRating
+) {
+    return;
+}
 
 
-    const sorted =
-        [...suaveData.standings]
-            .sort(
-                (a, b) =>
-                    b.points -
-                    a.points
-            );
+    try {
+
+        const {
+            data: club,
+            error
+        } = await suaveSupabase
+
+            .from("ea_club_stats")
+
+            .select(
+                "club_name, current_division, skill_rating"
+            )
+
+            .eq(
+                "id",
+                1
+            )
+
+            .single();
 
 
-    sorted.forEach(
-        (team, index) => {
-
-            const row =
-                document.createElement(
-                    "div"
-                );
-
-
-            row.className =
-                `standings-row ${
-                    team.suave
-                        ? "suave"
-                        : ""
-                }`;
-
-
-            row.innerHTML = `
-
-                <span>
-                    ${index + 1}
-                </span>
-
-                <span>
-                    ${team.team}
-                </span>
-
-                <span>
-                    ${team.played}
-                </span>
-
-                <span>
-                    ${team.wins}
-                </span>
-
-                <span>
-                    ${team.draws}
-                </span>
-
-                <span>
-                    ${team.losses}
-                </span>
-
-                <span>
-                    ${team.points}
-                </span>
-
-            `;
-
-
-            container.appendChild(
-                row
-            );
-
+        if (error) {
+            throw error;
         }
-    );
+
+
+const division =
+    club.current_division;
+
+if (division) {
+
+    divisionLogo.src =
+        `division-${division}.png`;
+
+    divisionLogo.alt =
+        `Divisão ${division}`;
+
+}
+else {
+
+    divisionLogo.src =
+        "division-elite.png";
+
+    divisionLogo.alt =
+        "Divisão Elite";
 
 }
 
+        clubName.textContent =
+            club.club_name ||
+            "SUAVEMENTE FC";
+
+        skillRating.textContent =
+            club.skill_rating ?? "—";
+
+
+        console.log(
+            "✅ Divisão EA:",
+            club.current_division,
+            "| Skill Rating:",
+            club.skill_rating
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "❌ Erro ao carregar divisão EA:",
+            error
+        );
+
+        divisionLogo.removeAttribute("src");
+
+        clubName.textContent =
+            "SUAVEMENTE FC";
+
+        skillRating.textContent = "—";
+
+    }
+
+}
 
 /* =========================================================
    10. ESTATÍSTICAS AUTOMÁTICAS
@@ -1659,8 +1868,10 @@ function renderStandings() {
 function calculateStats() {
 
     const results =
-        suaveData.results;
-
+    suaveData.results.filter(
+        game =>
+            game.isLeagueMatch
+    );
 
     let wins = 0;
     let draws = 0;
@@ -1760,136 +1971,194 @@ function calculateStats() {
    11. MOSTRAR ESTATÍSTICAS
 ========================================================= */
 
-function renderStats() {
-
-    const stats =
-        calculateStats();
-
+async function renderStats() {
 
     const container =
         document.getElementById(
             "stats-grid"
         );
 
+    if (!container) {
+        return;
+    }
 
-    const items = [
 
-        {
-            value:
-                stats.played,
+    try {
 
-            label:
-                "JOGOS"
-        },
+        const {
+            data: club,
+            error
+        } = await suaveSupabase
 
-        {
-            value:
-                stats.wins,
+            .from("ea_club_stats")
 
-            label:
-                "VITÓRIAS",
+            .select(
+                "games_played, wins, draws, losses, goals, goals_against, clean_sheets"
+            )
 
-            accent:
-                true
-        },
+            .eq(
+                "id",
+                1
+            )
 
-        {
-            value:
-                stats.draws,
+            .single();
 
-            label:
-                "EMPATES"
-        },
 
-        {
-            value:
-                stats.losses,
-
-            label:
-                "DERROTAS"
-        },
-
-        {
-            value:
-                stats.goalsFor,
-
-            label:
-                "GOLOS MARCADOS"
-        },
-
-        {
-            value:
-                stats.goalsAgainst,
-
-            label:
-                "GOLOS SOFRIDOS"
-        },
-
-        {
-            value:
-                stats.goalDifference > 0
-
-                    ? `+${stats.goalDifference}`
-
-                    : stats.goalDifference,
-
-            label:
-                "DIFERENÇA"
-        },
-
-        {
-            value:
-                `${stats.performance}%`,
-
-            label:
-                "APROVEITAMENTO",
-
-            accent:
-                true
+        if (error) {
+            throw error;
         }
 
-    ];
+
+        const goalDifference =
+    (club.goals ?? 0) -
+    (club.goals_against ?? 0);
+
+        const winRate =
+    (club.games_played ?? 0) > 0
+        ? Math.round(
+            ((club.wins ?? 0) /
+            club.games_played) * 100
+        )
+        : 0;
+            
+            
 
 
-    container.innerHTML = "";
+        const items = [
+
+            {
+                value:
+                    club.games_played ?? 0,
+
+                label:
+                    "JOGOS"
+            },
+
+            {
+                value:
+                    club.wins ?? 0,
+
+                label:
+                    "VITÓRIAS",
+
+                accent:
+                    true
+            },
+
+            {
+                value:
+                    club.draws ?? 0,
+
+                label:
+                    "EMPATES"
+            },
+
+            {
+                value:
+                    club.losses ?? 0,
+
+                label:
+                    "DERROTAS"
+            },
+
+            {
+                value:
+                    club.goals ?? 0,
+
+                label:
+                    "GOLOS MARCADOS"
+            },
+
+            {
+                value:
+                    club.goals_against ?? 0,
+
+                label:
+                    "GOLOS SOFRIDOS"
+            },
+
+            {
+                value:
+                    goalDifference > 0
+                        ? `+${goalDifference}`
+                        : goalDifference,
+
+                label:
+                    "DIFERENÇA"
+            },
+
+            {
+                value:
+                    `${winRate}%`,
+
+                label:
+                    "% VITÓRIAS",
+
+                accent:
+                    true
+            }
+
+        ];
 
 
-    items.forEach(
-        item => {
+        container.innerHTML = "";
 
-            const stat =
-                document.createElement(
-                    "article"
+
+        items.forEach(
+            item => {
+
+                const stat =
+                    document.createElement(
+                        "article"
+                    );
+
+
+                stat.className =
+                    `stat ${
+                        item.accent
+                            ? "accent"
+                            : ""
+                    }`;
+
+
+                stat.innerHTML = `
+
+                    <strong>
+                        ${item.value}
+                    </strong>
+
+                    <span>
+                        ${item.label}
+                    </span>
+
+                `;
+
+
+                container.appendChild(
+                    stat
                 );
 
-
-            stat.className =
-                `stat ${
-                    item.accent
-                        ? "accent"
-                        : ""
-                }`;
+            }
+        );
 
 
-            stat.innerHTML = `
+        console.log(
+            "✅ Estatísticas da época EA carregadas:",
+            club
+        );
 
-                <strong>
-                    ${item.value}
-                </strong>
+    }
 
-                <span>
-                    ${item.label}
-                </span>
+    catch (error) {
 
-            `;
+        console.error(
+            "❌ Erro ao carregar estatísticas EA:",
+            error
+        );
 
+        container.innerHTML = "";
 
-            container.appendChild(
-                stat
-            );
-
-        }
-    );
+    }
 
 }
 
@@ -2267,8 +2536,8 @@ document.addEventListener(
     "DOMContentLoaded",
     async () => {
 
-        // Próximo jogo
-        renderNextGameStrip();
+        // Próximo jogo real do Supabase
+        await renderNextGameStrip();
 
 
         // Classificação

@@ -108,11 +108,11 @@
 
     <section class="match-center" id="calendario">
 
-        <!-- ==================================================
+         <!-- ==================================================
              PRÓXIMO JOGO
         =================================================== -->
 
-        <div class="featured-match">
+        <div class="featured-match featured-match-empty">
 
             <div class="featured-label">
 
@@ -129,8 +129,6 @@
 
             <div class="featured-teams">
 
-                <!-- SUAVEMENTE FC -->
-
                 <div class="featured-team suave-team">
 
                     <img
@@ -145,26 +143,20 @@
                 </div>
 
 
-                <!-- VS -->
-
                 <div class="featured-vs">
-                    VS
+                    —
                 </div>
 
-
-                <!-- ADVERSÁRIO -->
 
                 <div class="featured-team opponent-team">
 
                     <div
-                        class="featured-opponent-logo placeholder-logo"
                         id="next-game-opponent-logo"
-                    >
-                        ?
-                    </div>
+                        style="display: none;"
+                    ></div>
 
                     <strong id="next-game-opponent">
-                        TBA
+                        ADVERSÁRIO A DEFINIR
                     </strong>
 
                 </div>
@@ -175,17 +167,12 @@
             <div class="featured-meta">
 
                 <span id="next-game-competition">
-                    PRO CLUBS
+                    AGUARDA MARCAÇÃO
                 </span>
-
-                <a href="#full-calendar">
-                    CALENDÁRIO COMPLETO →
-                </a>
 
             </div>
 
         </div>
-
 
         <!-- ==================================================
              RESULTADOS
@@ -398,72 +385,120 @@
     </section>
 
 
-    <!-- ==================================================
-         CLASSIFICAÇÃO + ESTATÍSTICAS
-    =================================================== -->
+ <!-- ==================================================
+     DIVISÃO + ESTATÍSTICAS
+=================================================== -->
 
-    <section class="section dashboard-section" id="estatisticas">
+<section class="section dashboard-section" id="estatisticas">
 
-        <div class="dashboard-grid">
+    <div class="dashboard-grid">
 
-            <div class="standings-panel">
+        <!-- ==================================================
+             DIVISÃO ATUAL
+        =================================================== -->
 
-                <div class="section-heading compact">
+        <div class="standings-panel division-panel">
 
-                    <div>
-                        <span class="section-kicker">
-                            COMPETIÇÃO
-                        </span>
+            <div class="section-heading compact">
 
-                        <h2>CLASSIFICAÇÃO</h2>
-                    </div>
+                <div>
 
-                </div>
+                    <span class="section-kicker">
+                        EA SPORTS FC · PRO CLUBS
+                    </span>
 
-                <div class="standings-table">
-
-                    <div class="standings-row standings-header">
-                        <span>#</span>
-                        <span>EQUIPA</span>
-                        <span>J</span>
-                        <span>V</span>
-                        <span>E</span>
-                        <span>D</span>
-                        <span>PTS</span>
-                    </div>
-
-                    <div id="standings-body"></div>
+                    <h2>DIVISÃO ATUAL</h2>
 
                 </div>
 
             </div>
 
 
-            <div class="statistics-panel">
+            <div class="division-card">
 
-                <div class="section-heading compact">
+                <div class="division-card-main">
 
-                    <div>
-                        <span class="section-kicker">
-                            TEMPORADA
+                    <!-- EMBLEMA DA DIVISÃO -->
+
+<div class="division-emblem division-emblem-real">
+
+    <img
+        id="division-logo"
+        class="division-logo"
+        src=""
+        alt="Divisão atual"
+    >
+
+</div>
+
+
+                    <!-- CLUBE -->
+
+                    <div class="division-club">
+
+                        <span class="division-status">
+                            ÉPOCA ATUAL
                         </span>
 
-                        <h2>OS NÚMEROS</h2>
+                        <h3 id="division-club-name">
+                            SUAVEMENTE FC
+                        </h3>
+
+
+                        <!-- SKILL RATING -->
+
+                        <div class="division-skill">
+
+                            <span>
+                                SKILL RATING
+                            </span>
+
+                            <strong id="division-skill-rating">
+                                —
+                            </strong>
+
+                        </div>
+
                     </div>
 
                 </div>
-
-                <div
-                    class="stats-grid"
-                    id="stats-grid"
-                ></div>
 
             </div>
 
         </div>
 
-    </section>
 
+        <!-- ==================================================
+             NÚMEROS DA ÉPOCA
+        =================================================== -->
+
+        <div class="statistics-panel">
+
+            <div class="section-heading compact">
+
+                <div>
+
+                    <span class="section-kicker">
+                        TEMPORADA
+                    </span>
+
+                    <h2>OS NÚMEROS</h2>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="stats-grid"
+                id="stats-grid"
+            ></div>
+
+        </div>
+
+    </div>
+
+</section>
 
     <!-- ==================================================
          FINAL

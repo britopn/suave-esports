@@ -20,6 +20,7 @@ import { createClient } from '@supabase/supabase-js';
 const TOKEN = process.env.DISCORD_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
+const CALENDARIO_CHANNEL_ID = '1550553630308962334';
 
 
 if (!TOKEN) {
@@ -548,6 +549,186 @@ client.on(
     }
 );
 
+// ======================================================
+// AUTOCOMPLETE DOS JOGOS
+// ======================================================
+
+client.on(
+    'interactionCreate',
+    async interaction => {
+
+        if (
+            !interaction.isAutocomplete()
+        ) {
+            return;
+        }
+
+
+        if (
+            interaction.commandName !==
+            'jogo'
+        ) {
+            return;
+        }
+
+
+        const focused =
+            interaction.options
+                .getFocused(true);
+
+
+        if (
+            focused.name !==
+            'jogo'
+        ) {
+            return;
+        }
+
+
+        try {
+
+            const {
+                data: jogos,
+                error
+            } = await supabase
+
+                .from('scheduled_matches')
+
+                .select(
+                    'id, opponent_name, competition, scheduled_at'
+                )
+
+                .eq(
+                    'status',
+                    'scheduled'
+                )
+
+                .order(
+                    'scheduled_at',
+                    {
+                        ascending: true
+                    }
+                );
+
+
+            if (error) {
+
+                console.error(
+                    '❌ Erro no autocomplete dos jogos:',
+                    error
+                );
+
+                await interaction.respond([]);
+
+                return;
+
+            }
+
+
+            const pesquisa =
+                String(
+                    focused.value || ''
+                )
+                    .toLowerCase()
+                    .trim();
+
+
+            const resultados =
+                (jogos || [])
+
+                    .map(jogo => {
+
+                        const data =
+                            new Date(
+                                jogo.scheduled_at
+                            );
+
+
+                        const dataFormatada =
+                            data.toLocaleDateString(
+                                'pt-PT',
+                                {
+                                    day: '2-digit',
+                                    month: '2-digit'
+                                }
+                            );
+
+
+                        const horaFormatada =
+                            data.toLocaleTimeString(
+                                'pt-PT',
+                                {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                }
+                            );
+
+
+                        return {
+
+                            jogo,
+
+                            texto:
+                                `${dataFormatada} · ${horaFormatada} · ` +
+                                `SUAVEMENTE FC vs ${jogo.opponent_name}`
+
+                        };
+
+                    })
+
+                    .filter(item =>
+
+                        item.texto
+                            .toLowerCase()
+                            .includes(
+                                pesquisa
+                            )
+
+                    )
+
+                    .slice(0, 25)
+
+                    .map(item => ({
+
+                        name:
+                            item.texto,
+
+                        value:
+                            String(
+                                item.jogo.id
+                            )
+
+                    }));
+
+
+            await interaction.respond(
+                resultados
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                '❌ Erro inesperado no autocomplete dos jogos:',
+                error
+            );
+
+
+            try {
+
+                await interaction.respond([]);
+
+            }
+
+            catch {
+                // interação já expirou
+            }
+
+        }
+
+    }
+);
 
 // ======================================================
 // COMANDOS
@@ -799,7 +980,7 @@ client.on(
         }
 
 
-        // ==================================================
+         // ==================================================
         // /jogador foto
         // ==================================================
 
@@ -866,6 +1047,10 @@ client.on(
                 }
 
 
+                // ==========================================
+                // PROCURAR JOGADOR
+                // ==========================================
+
                 const {
                     data: jogador,
                     error: erroJogador
@@ -892,7 +1077,6 @@ client.on(
                         erroJogador
                     );
 
-
                     await interaction.editReply({
                         content:
                             '❌ Não consegui consultar o jogador.'
@@ -915,6 +1099,110 @@ client.on(
                 }
 
 
+                // ==========================================
+                // DESCARREGAR FOTO DO DISCORD
+                // ==========================================
+
+                const respostaFoto =
+                    await fetch(
+                        foto.url
+                    );
+
+
+                if (!respostaFoto.ok) {
+
+                    throw new Error(
+                        `Não consegui descarregar a imagem do Discord. HTTP ${respostaFoto.status}`
+                    );
+
+                }
+
+
+                const imagemBuffer =
+                    Buffer.from(
+                        await respostaFoto.arrayBuffer()
+                    );
+
+
+                // ==========================================
+                // EXTENSÃO / NOME DO FICHEIRO
+                // ==========================================
+
+                const extensao =
+                    foto.name
+                        ?.split('.')
+                        .pop()
+                        ?.toLowerCase() ||
+                    'jpg';
+
+
+                const caminhoFoto =
+                    `players/${jogador.id}.${extensao}`;
+
+
+                // ==========================================
+                // GUARDAR NO SUPABASE STORAGE
+                // ==========================================
+
+                const {
+                    error: erroUpload
+                } = await supabase.storage
+
+                    .from('player-photos')
+
+                    .upload(
+                        caminhoFoto,
+                        imagemBuffer,
+                        {
+                            contentType:
+                                foto.contentType,
+
+                            upsert:
+                                true
+                        }
+                    );
+
+
+                if (erroUpload) {
+
+                    console.error(
+                        '❌ Erro no upload da fotografia:',
+                        erroUpload
+                    );
+
+                    await interaction.editReply({
+                        content:
+                            '❌ Não consegui guardar a fotografia no Storage.'
+                    });
+
+                    return;
+
+                }
+
+
+                // ==========================================
+                // OBTER URL PÚBLICO PERMANENTE
+                // ==========================================
+
+                const {
+                    data: publicUrlData
+                } = supabase.storage
+
+                    .from('player-photos')
+
+                    .getPublicUrl(
+                        caminhoFoto
+                    );
+
+
+                const photoUrl =
+                    publicUrlData.publicUrl;
+
+
+                // ==========================================
+                // ATUALIZAR JOGADOR
+                // ==========================================
+
                 const {
                     data: jogadorAtualizado,
                     error: erroUpdate
@@ -924,7 +1212,7 @@ client.on(
 
                     .update({
                         photo_url:
-                            foto.url
+                            photoUrl
                     })
 
                     .eq(
@@ -944,16 +1232,19 @@ client.on(
                         erroUpdate
                     );
 
-
                     await interaction.editReply({
                         content:
-                            '❌ Não consegui atualizar a fotografia.'
+                            '❌ A fotografia foi guardada, mas não consegui atualizar o jogador.'
                     });
 
                     return;
 
                 }
 
+
+                // ==========================================
+                // DISCORD EMBED
+                // ==========================================
 
                 const embed =
                     new EmbedBuilder()
@@ -1002,7 +1293,7 @@ client.on(
 
 
                 console.log(
-                    `📸 Fotografia atualizada: ` +
+                    `📸 Fotografia permanente atualizada: ` +
                     `${jogadorAtualizado.name} ` +
                     `#${jogadorAtualizado.number}`
                 );
@@ -1028,7 +1319,6 @@ client.on(
             return;
 
         }
-
 
         // ==================================================
         // /jogador editar
@@ -1526,6 +1816,1235 @@ client.on(
     }
 );
 
+// ======================================================
+// JOGOS — CALENDÁRIO
+// ======================================================
+
+commands.push(
+
+    new SlashCommandBuilder()
+
+        .setName('jogo')
+
+        .setDescription(
+            'Gestão do calendário do SUAVEMENTE FC'
+        )
+
+
+        // ==================================================
+        // /jogo marcar
+        // ==================================================
+
+        .addSubcommand(subcommand =>
+
+            subcommand
+
+                .setName('marcar')
+
+                .setDescription(
+                    'Marca um novo jogo do SUAVEMENTE FC'
+                )
+
+                .addStringOption(option =>
+
+                    option
+
+                        .setName('adversario')
+
+                        .setDescription(
+                            'Nome da equipa adversária'
+                        )
+
+                        .setRequired(true)
+
+                )
+
+                .addStringOption(option =>
+
+                    option
+
+                        .setName('data')
+
+                        .setDescription(
+                            'Data do jogo — exemplo: 25/09/2026'
+                        )
+
+                        .setRequired(true)
+
+                )
+
+                .addStringOption(option =>
+
+                    option
+
+                        .setName('hora')
+
+                        .setDescription(
+                            'Hora do jogo — exemplo: 21:30'
+                        )
+
+                        .setRequired(true)
+
+                )
+
+                .addStringOption(option =>
+
+                    option
+
+                        .setName('competicao')
+
+                        .setDescription(
+                            'Competição — exemplo: Zoryx League'
+                        )
+
+                        .setRequired(true)
+
+                )
+
+        )
+
+
+        // ==================================================
+        // /jogo editar
+        // ==================================================
+
+        .addSubcommand(subcommand =>
+
+            subcommand
+
+                .setName('editar')
+
+                .setDescription(
+                    'Edita um jogo já marcado'
+                )
+
+                .addStringOption(option =>
+
+                    option
+
+                        .setName('jogo')
+
+                        .setDescription(
+                            'Jogo que queres editar'
+                        )
+
+                        .setRequired(true)
+
+                        .setAutocomplete(true)
+
+                )
+
+                .addStringOption(option =>
+
+                    option
+
+                        .setName('adversario')
+
+                        .setDescription(
+                            'Novo nome da equipa adversária'
+                        )
+
+                        .setRequired(false)
+
+                )
+
+                .addStringOption(option =>
+
+                    option
+
+                        .setName('data')
+
+                        .setDescription(
+                            'Nova data — exemplo: 25/09/2026'
+                        )
+
+                        .setRequired(false)
+
+                )
+
+                .addStringOption(option =>
+
+                    option
+
+                        .setName('hora')
+
+                        .setDescription(
+                            'Nova hora — exemplo: 21:30'
+                        )
+
+                        .setRequired(false)
+
+                )
+
+                .addStringOption(option =>
+
+                    option
+
+                        .setName('competicao')
+
+                        .setDescription(
+                            'Nova competição'
+                        )
+
+                        .setRequired(false)
+
+                )
+
+        )
+
+
+        // ==================================================
+        // /jogo apagar
+        // ==================================================
+
+        .addSubcommand(subcommand =>
+
+            subcommand
+
+                .setName('apagar')
+
+                .setDescription(
+                    'Apaga um jogo do calendário'
+                )
+
+                .addStringOption(option =>
+
+                    option
+
+                        .setName('jogo')
+
+                        .setDescription(
+                            'Jogo que queres apagar'
+                        )
+
+                        .setRequired(true)
+
+                        .setAutocomplete(true)
+
+                )
+
+        )
+
+);
+
+// ======================================================
+// EXECUTAR COMANDOS /jogo
+// ======================================================
+
+client.on(
+    'interactionCreate',
+    async interaction => {
+
+        if (!interaction.isChatInputCommand()) {
+            return;
+        }
+
+        if (interaction.commandName !== 'jogo') {
+            return;
+        }
+
+
+        // ==================================================
+        // PERMISSÕES
+        // ==================================================
+
+        if (
+            !interaction.memberPermissions?.has(
+                PermissionFlagsBits.ManageGuild
+            )
+        ) {
+
+            await interaction.reply({
+                content:
+                    '❌ Apenas a staff pode gerir o calendário.',
+                ephemeral: true
+            });
+
+            return;
+        }
+
+
+        const subcommand =
+            interaction.options.getSubcommand();
+
+
+        // ==================================================
+        // HELPER — CRIAR EMBED DO JOGO
+        // ==================================================
+
+        function criarEmbedJogo(jogo) {
+
+            const timestampDiscord =
+                Math.floor(
+                    new Date(
+                        jogo.scheduled_at
+                    ).getTime() / 1000
+                );
+
+
+            return new EmbedBuilder()
+
+                .setColor(0x003C2C)
+
+                .setAuthor({
+                    name:
+                        'SUAVEMENTE FC · CALENDÁRIO'
+                })
+
+                .setTitle(
+                    `⚽ SUAVEMENTE FC vs ${jogo.opponent_name.toUpperCase()}`
+                )
+
+                .setDescription(
+                    `**${jogo.competition.toUpperCase()}**`
+                )
+
+                .addFields(
+                    {
+                        name:
+                            '📅 DATA',
+
+                        value:
+                            `<t:${timestampDiscord}:D>`,
+
+                        inline:
+                            true
+                    },
+
+                    {
+                        name:
+                            '🕘 HORA',
+
+                        value:
+                            `<t:${timestampDiscord}:t>`,
+
+                        inline:
+                            true
+                    }
+                )
+
+                .setFooter({
+                    text:
+                        'SUAVE ESPORTS · CALENDÁRIO'
+                });
+        }
+
+
+        // ==================================================
+        // HELPER — VALIDAR / CONSTRUIR DATA
+        // ==================================================
+
+        function construirData(
+            dataTexto,
+            horaTexto
+        ) {
+
+            const dataMatch =
+                dataTexto.match(
+                    /^(\d{2})\/(\d{2})\/(\d{4})$/
+                );
+
+
+            if (!dataMatch) {
+
+                return {
+                    erro:
+                        '❌ A data tem de estar no formato `DD/MM/AAAA`.'
+                };
+
+            }
+
+
+            const horaMatch =
+                horaTexto.match(
+                    /^([01]\d|2[0-3]):([0-5]\d)$/
+                );
+
+
+            if (!horaMatch) {
+
+                return {
+                    erro:
+                        '❌ A hora tem de estar no formato `HH:MM`.'
+                };
+
+            }
+
+
+            const dia =
+                Number(dataMatch[1]);
+
+            const mes =
+                Number(dataMatch[2]);
+
+            const ano =
+                Number(dataMatch[3]);
+
+            const horas =
+                Number(horaMatch[1]);
+
+            const minutos =
+                Number(horaMatch[2]);
+
+
+            const dataFinal =
+                new Date(
+                    ano,
+                    mes - 1,
+                    dia,
+                    horas,
+                    minutos,
+                    0,
+                    0
+                );
+
+
+            if (
+                dataFinal.getFullYear() !== ano ||
+                dataFinal.getMonth() !== mes - 1 ||
+                dataFinal.getDate() !== dia
+            ) {
+
+                return {
+                    erro:
+                        '❌ Essa data não é válida.'
+                };
+
+            }
+
+
+            if (
+                dataFinal.getTime() <=
+                Date.now()
+            ) {
+
+                return {
+                    erro:
+                        '❌ O jogo tem de estar marcado para uma data futura.'
+                };
+
+            }
+
+
+            return {
+                data:
+                    dataFinal
+            };
+
+        }
+
+
+        // ==================================================
+        // /jogo marcar
+        // ==================================================
+
+        if (subcommand === 'marcar') {
+
+            await interaction.deferReply({
+                ephemeral: true
+            });
+
+
+            try {
+
+                const adversario =
+                    interaction.options
+                        .getString('adversario')
+                        .trim();
+
+
+                const dataTexto =
+                    interaction.options
+                        .getString('data')
+                        .trim();
+
+
+                const horaTexto =
+                    interaction.options
+                        .getString('hora')
+                        .trim();
+
+
+                const competicao =
+                    interaction.options
+                        .getString('competicao')
+                        .trim();
+
+
+                if (!adversario) {
+
+                    await interaction.editReply({
+                        content:
+                            '❌ O adversário não pode ficar vazio.'
+                    });
+
+                    return;
+                }
+
+
+                if (!competicao) {
+
+                    await interaction.editReply({
+                        content:
+                            '❌ A competição não pode ficar vazia.'
+                    });
+
+                    return;
+                }
+
+
+                const resultadoData =
+                    construirData(
+                        dataTexto,
+                        horaTexto
+                    );
+
+
+                if (resultadoData.erro) {
+
+                    await interaction.editReply({
+                        content:
+                            resultadoData.erro
+                    });
+
+                    return;
+                }
+
+
+                // ==========================================
+                // GUARDAR NO SUPABASE
+                // ==========================================
+
+                const {
+                    data: jogo,
+                    error: erroInsert
+                } = await supabase
+
+                    .from('scheduled_matches')
+
+                    .insert({
+                        opponent_name:
+                            adversario,
+
+                        competition:
+                            competicao,
+
+                        scheduled_at:
+                            resultadoData.data.toISOString(),
+
+                        status:
+                            'scheduled'
+                    })
+
+                    .select()
+
+                    .single();
+
+
+                if (erroInsert) {
+                    throw erroInsert;
+                }
+
+
+                // ==========================================
+                // PUBLICAR NO #CALENDÁRIO
+                // ==========================================
+
+                const canal =
+                    await client.channels.fetch(
+                        CALENDARIO_CHANNEL_ID
+                    );
+
+
+                if (
+                    !canal ||
+                    !canal.isTextBased()
+                ) {
+
+                    // Se não conseguimos publicar,
+                    // removemos o jogo que acabámos de criar.
+
+                    await supabase
+                        .from('scheduled_matches')
+                        .delete()
+                        .eq(
+                            'id',
+                            jogo.id
+                        );
+
+
+                    throw new Error(
+                        'Canal #calendário não encontrado.'
+                    );
+                }
+
+
+                let mensagemCalendario;
+
+
+                try {
+
+                    mensagemCalendario =
+                        await canal.send({
+                            embeds: [
+                                criarEmbedJogo(jogo)
+                            ]
+                        });
+
+                }
+
+                catch (erroDiscord) {
+
+                    // Não queremos um jogo guardado
+                    // se nem sequer conseguimos publicá-lo.
+
+                    await supabase
+                        .from('scheduled_matches')
+                        .delete()
+                        .eq(
+                            'id',
+                            jogo.id
+                        );
+
+
+                    throw erroDiscord;
+                }
+
+
+                // ==========================================
+                // GUARDAR ID DA MENSAGEM DISCORD
+                // ==========================================
+
+                const {
+                    error: erroMensagemId
+                } = await supabase
+
+                    .from('scheduled_matches')
+
+                    .update({
+                        discord_message_id:
+                            mensagemCalendario.id
+                    })
+
+                    .eq(
+                        'id',
+                        jogo.id
+                    );
+
+
+                if (erroMensagemId) {
+
+                    // Rollback:
+                    // se não conseguimos ligar a mensagem
+                    // ao jogo, apagamos ambos.
+
+                    try {
+                        await mensagemCalendario.delete();
+                    }
+                    catch {
+                        // mensagem já pode não existir
+                    }
+
+
+                    await supabase
+                        .from('scheduled_matches')
+                        .delete()
+                        .eq(
+                            'id',
+                            jogo.id
+                        );
+
+
+                    throw erroMensagemId;
+                }
+
+
+                // ==========================================
+                // CONFIRMAÇÃO
+                // ==========================================
+
+                await interaction.editReply({
+                    content:
+                        `✅ **Jogo marcado.**\n` +
+                        `SUAVEMENTE FC vs **${jogo.opponent_name}**\n` +
+                        `📅 ${dataTexto} · ${horaTexto}\n` +
+                        `🏆 ${jogo.competition}`
+                });
+
+
+                console.log(
+                    `📅 Jogo marcado: ` +
+                    `SUAVEMENTE FC vs ${jogo.opponent_name} · ` +
+                    `${dataTexto} ${horaTexto}`
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    '❌ Erro em /jogo marcar:',
+                    error
+                );
+
+
+                await interaction.editReply({
+                    content:
+                        '❌ Não consegui marcar o jogo.'
+                });
+
+            }
+
+
+            return;
+        }
+
+
+        // ==================================================
+        // /jogo editar
+        // ==================================================
+
+        if (subcommand === 'editar') {
+
+            await interaction.deferReply({
+                ephemeral: true
+            });
+
+
+            try {
+
+                const jogoId =
+                    interaction.options
+                        .getString('jogo');
+
+
+                const novoAdversario =
+                    interaction.options
+                        .getString('adversario');
+
+
+                const novaData =
+                    interaction.options
+                        .getString('data');
+
+
+                const novaHora =
+                    interaction.options
+                        .getString('hora');
+
+
+                const novaCompeticao =
+                    interaction.options
+                        .getString('competicao');
+
+
+                if (
+                    novoAdversario === null &&
+                    novaData === null &&
+                    novaHora === null &&
+                    novaCompeticao === null
+                ) {
+
+                    await interaction.editReply({
+                        content:
+                            '❌ Tens de alterar pelo menos um campo.'
+                    });
+
+                    return;
+                }
+
+
+                // ==========================================
+                // PROCURAR JOGO ATUAL
+                // ==========================================
+
+                const {
+                    data: jogoAtual,
+                    error: erroPesquisa
+                } = await supabase
+
+                    .from('scheduled_matches')
+
+                    .select('*')
+
+                    .eq(
+                        'id',
+                        jogoId
+                    )
+
+                    .maybeSingle();
+
+
+                if (erroPesquisa) {
+                    throw erroPesquisa;
+                }
+
+
+                if (!jogoAtual) {
+
+                    await interaction.editReply({
+                        content:
+                            '❌ Esse jogo já não existe.'
+                    });
+
+                    return;
+                }
+
+
+                // ==========================================
+                // DATA/HORA ATUAIS
+                // ==========================================
+
+                const dataAtual =
+                    new Date(
+                        jogoAtual.scheduled_at
+                    );
+
+
+                const dataAtualTexto =
+                    [
+                        String(
+                            dataAtual.getDate()
+                        ).padStart(2, '0'),
+
+                        String(
+                            dataAtual.getMonth() + 1
+                        ).padStart(2, '0'),
+
+                        dataAtual.getFullYear()
+                    ].join('/');
+
+
+                const horaAtualTexto =
+                    [
+                        String(
+                            dataAtual.getHours()
+                        ).padStart(2, '0'),
+
+                        String(
+                            dataAtual.getMinutes()
+                        ).padStart(2, '0')
+                    ].join(':');
+
+
+                const dataTextoFinal =
+                    novaData !== null
+                        ? novaData.trim()
+                        : dataAtualTexto;
+
+
+                const horaTextoFinal =
+                    novaHora !== null
+                        ? novaHora.trim()
+                        : horaAtualTexto;
+
+
+                const resultadoData =
+                    construirData(
+                        dataTextoFinal,
+                        horaTextoFinal
+                    );
+
+
+                if (resultadoData.erro) {
+
+                    await interaction.editReply({
+                        content:
+                            resultadoData.erro
+                    });
+
+                    return;
+                }
+
+
+                const adversarioFinal =
+                    novoAdversario !== null
+                        ? novoAdversario.trim()
+                        : jogoAtual.opponent_name;
+
+
+                const competicaoFinal =
+                    novaCompeticao !== null
+                        ? novaCompeticao.trim()
+                        : jogoAtual.competition;
+
+
+                if (!adversarioFinal) {
+
+                    await interaction.editReply({
+                        content:
+                            '❌ O adversário não pode ficar vazio.'
+                    });
+
+                    return;
+                }
+
+
+                if (!competicaoFinal) {
+
+                    await interaction.editReply({
+                        content:
+                            '❌ A competição não pode ficar vazia.'
+                    });
+
+                    return;
+                }
+
+
+                const dadosAtualizados = {
+
+                    ...jogoAtual,
+
+                    opponent_name:
+                        adversarioFinal,
+
+                    competition:
+                        competicaoFinal,
+
+                    scheduled_at:
+                        resultadoData.data.toISOString()
+
+                };
+
+
+                // ==========================================
+                // ATUALIZAR SUPABASE
+                // ==========================================
+
+                const {
+                    data: jogoAtualizado,
+                    error: erroUpdate
+                } = await supabase
+
+                    .from('scheduled_matches')
+
+                    .update({
+                        opponent_name:
+                            adversarioFinal,
+
+                        competition:
+                            competicaoFinal,
+
+                        scheduled_at:
+                            resultadoData.data.toISOString()
+                    })
+
+                    .eq(
+                        'id',
+                        jogoId
+                    )
+
+                    .select()
+
+                    .single();
+
+
+                if (erroUpdate) {
+                    throw erroUpdate;
+                }
+
+
+                // ==========================================
+                // EDITAR A MESMA MENSAGEM NO DISCORD
+                // ==========================================
+
+                const canal =
+                    await client.channels.fetch(
+                        CALENDARIO_CHANNEL_ID
+                    );
+
+
+                if (
+                    !canal ||
+                    !canal.isTextBased()
+                ) {
+
+                    throw new Error(
+                        'Canal #calendário não encontrado.'
+                    );
+                }
+
+
+                let mensagemCalendario = null;
+
+
+                if (
+                    jogoAtual.discord_message_id
+                ) {
+
+                    try {
+
+                        mensagemCalendario =
+                            await canal.messages.fetch(
+                                jogoAtual.discord_message_id
+                            );
+
+                    }
+
+                    catch {
+                        mensagemCalendario = null;
+                    }
+
+                }
+
+
+                if (mensagemCalendario) {
+
+                    await mensagemCalendario.edit({
+                        embeds: [
+                            criarEmbedJogo(
+                                jogoAtualizado
+                            )
+                        ]
+                    });
+
+                }
+
+                else {
+
+                    // Se a mensagem original desapareceu,
+                    // criamos outra e voltamos a guardar o ID.
+
+                    const novaMensagem =
+                        await canal.send({
+                            embeds: [
+                                criarEmbedJogo(
+                                    jogoAtualizado
+                                )
+                            ]
+                        });
+
+
+                    const {
+                        error: erroNovoId
+                    } = await supabase
+
+                        .from('scheduled_matches')
+
+                        .update({
+                            discord_message_id:
+                                novaMensagem.id
+                        })
+
+                        .eq(
+                            'id',
+                            jogoId
+                        );
+
+
+                    if (erroNovoId) {
+                        throw erroNovoId;
+                    }
+
+                }
+
+
+                // ==========================================
+                // CONFIRMAÇÃO
+                // ==========================================
+
+                await interaction.editReply({
+                    content:
+                        `✅ **Jogo atualizado.**\n` +
+                        `SUAVEMENTE FC vs **${jogoAtualizado.opponent_name}**\n` +
+                        `📅 ${dataTextoFinal} · ${horaTextoFinal}\n` +
+                        `🏆 ${jogoAtualizado.competition}`
+                });
+
+
+                console.log(
+                    `✏️ Jogo atualizado: ` +
+                    `SUAVEMENTE FC vs ${jogoAtualizado.opponent_name}`
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    '❌ Erro em /jogo editar:',
+                    error
+                );
+
+
+                await interaction.editReply({
+                    content:
+                        '❌ Não consegui editar o jogo.'
+                });
+
+            }
+
+
+            return;
+        }
+
+
+        // ==================================================
+        // /jogo apagar
+        // ==================================================
+
+        if (subcommand === 'apagar') {
+
+            await interaction.deferReply({
+                ephemeral: true
+            });
+
+
+            try {
+
+                const jogoId =
+                    interaction.options
+                        .getString('jogo');
+
+
+                // ==========================================
+                // PROCURAR JOGO
+                // ==========================================
+
+                const {
+                    data: jogo,
+                    error: erroPesquisa
+                } = await supabase
+
+                    .from('scheduled_matches')
+
+                    .select('*')
+
+                    .eq(
+                        'id',
+                        jogoId
+                    )
+
+                    .maybeSingle();
+
+
+                if (erroPesquisa) {
+                    throw erroPesquisa;
+                }
+
+
+                if (!jogo) {
+
+                    await interaction.editReply({
+                        content:
+                            '❌ Esse jogo já não existe.'
+                    });
+
+                    return;
+                }
+
+
+                // ==========================================
+                // APAGAR MENSAGEM DO #CALENDÁRIO
+                // ==========================================
+
+                if (
+                    jogo.discord_message_id
+                ) {
+
+                    try {
+
+                        const canal =
+                            await client.channels.fetch(
+                                CALENDARIO_CHANNEL_ID
+                            );
+
+
+                        if (
+                            canal &&
+                            canal.isTextBased()
+                        ) {
+
+                            const mensagem =
+                                await canal.messages.fetch(
+                                    jogo.discord_message_id
+                                );
+
+
+                            if (mensagem) {
+                                await mensagem.delete();
+                            }
+
+                        }
+
+                    }
+
+                    catch (error) {
+
+                        // Se a mensagem já tiver sido apagada
+                        // manualmente, continuamos normalmente.
+
+                        console.log(
+                            '⚠️ A mensagem do calendário já não existe ou não pôde ser apagada.'
+                        );
+
+                    }
+
+                }
+
+
+                // ==========================================
+                // APAGAR DO SUPABASE
+                // ==========================================
+
+                const {
+                    error: erroDelete
+                } = await supabase
+
+                    .from('scheduled_matches')
+
+                    .delete()
+
+                    .eq(
+                        'id',
+                        jogoId
+                    );
+
+
+                if (erroDelete) {
+                    throw erroDelete;
+                }
+
+
+                // ==========================================
+                // CONFIRMAÇÃO
+                // ==========================================
+
+                await interaction.editReply({
+                    content:
+                        `🗑️ **Jogo apagado do calendário.**\n` +
+                        `SUAVEMENTE FC vs **${jogo.opponent_name}**`
+                });
+
+
+                console.log(
+                    `🗑️ Jogo apagado: ` +
+                    `SUAVEMENTE FC vs ${jogo.opponent_name}`
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    '❌ Erro em /jogo apagar:',
+                    error
+                );
+
+
+                await interaction.editReply({
+                    content:
+                        '❌ Não consegui apagar o jogo.'
+                });
+
+            }
+
+
+            return;
+        }
+
+    }
+);
 
 // ======================================================
 // EA FC — SINCRONIZAÇÃO
@@ -1575,9 +3094,30 @@ commands.push(
 
         )
 
+        .addSubcommand(subcommand =>
+
+            subcommand
+
+                .setName('procurarfotos')
+
+                .setDescription(
+                    'Procura fotografias antigas do plantel no Discord'
+                )
+
+        )
+                .addSubcommand(subcommand =>
+
+            subcommand
+
+                .setName('migrarfotos')
+
+                .setDescription(
+                    'Migra as fotografias antigas do plantel para o Supabase Storage'
+                )
+
+        )
+
 );
-
-
 // ======================================================
 // HELPERS EA
 // ======================================================
@@ -2383,6 +3923,212 @@ async function publicarResultadoDiscord(importacao) {
 }
 
 // ======================================================
+// ATUALIZAR ESTATÍSTICAS DO CLUBE EA
+// ======================================================
+
+async function syncEaClubStats() {
+
+    console.log(
+        '📊 A atualizar estatísticas EA do SUAVEMENTE FC...'
+    );
+
+
+    const seasonUrl =
+        'https://proclubs.ea.com/api/fc/currentSeasonLeaderboard/search' +
+        `?platform=${EA_PLATFORM}` +
+        '&clubName=SUAVEMENTE%20FC' +
+        '&maxResultCount=20';
+
+
+    const overallUrl =
+        'https://proclubs.ea.com/api/fc/clubs/overallStats' +
+        `?platform=${EA_PLATFORM}` +
+        `&clubIds=${EA_CLUB_ID}`;
+
+
+    const [
+        seasonResponse,
+        overallResponse
+    ] = await Promise.all([
+        fetch(seasonUrl),
+        fetch(overallUrl)
+    ]);
+
+
+    if (!seasonResponse.ok) {
+
+        throw new Error(
+            `EA Season Stats respondeu HTTP ${seasonResponse.status}`
+        );
+
+    }
+
+
+    if (!overallResponse.ok) {
+
+        throw new Error(
+            `EA Overall Stats respondeu HTTP ${overallResponse.status}`
+        );
+
+    }
+
+
+    const seasonData =
+        await seasonResponse.json();
+
+    const overallData =
+        await overallResponse.json();
+
+
+    const season =
+        Array.isArray(seasonData)
+            ? seasonData.find(
+                club =>
+                    String(club.clubId) ===
+                    EA_CLUB_ID
+            )
+            : null;
+
+
+    const overall =
+        Array.isArray(overallData)
+            ? overallData.find(
+                club =>
+                    String(club.clubId) ===
+                    EA_CLUB_ID
+            )
+            : null;
+
+
+    if (!season) {
+
+        throw new Error(
+            'SUAVEMENTE FC não encontrado nas estatísticas da época.'
+        );
+
+    }
+
+
+    const stats = {
+
+        id:
+            1,
+
+        club_id:
+            EA_CLUB_ID,
+
+        club_name:
+            season.clubName ||
+            season.clubInfo?.name ||
+            'SUAVEMENTE FC',
+
+        current_division:
+            eaNullableNumber(
+                season.currentDivision
+            ),
+
+        best_division:
+            eaNullableNumber(
+                season.bestDivision
+            ),
+
+        games_played:
+            eaNumber(
+                season.gamesPlayed
+            ),
+
+        wins:
+            eaNumber(
+                season.wins
+            ),
+
+        draws:
+            eaNumber(
+                season.ties
+            ),
+
+        losses:
+            eaNumber(
+                season.losses
+            ),
+
+        goals:
+            eaNumber(
+                season.goals
+            ),
+
+        goals_against:
+            eaNumber(
+                season.goalsAgainst
+            ),
+
+        clean_sheets:
+            eaNumber(
+                season.cleanSheets
+            ),
+
+        points:
+            eaNumber(
+                season.points
+            ),
+
+        promotions:
+            eaNumber(
+                season.promotions
+            ),
+
+        relegations:
+            eaNumber(
+                season.relegations
+            ),
+
+        skill_rating:
+            overall
+                ? eaNullableNumber(
+                    overall.skillRating
+                )
+                : null,
+
+        updated_at:
+            new Date().toISOString()
+
+    };
+
+
+    const {
+        error
+    } = await supabase
+
+        .from('ea_club_stats')
+
+        .upsert(
+            stats,
+            {
+                onConflict:
+                    'id'
+            }
+        );
+
+
+    if (error) {
+        throw error;
+    }
+
+
+    console.log(
+        `📊 EA STATS: Divisão ${stats.current_division} · ` +
+        `${stats.games_played}J · ` +
+        `${stats.wins}V ${stats.draws}E ${stats.losses}D · ` +
+        `${stats.points} PTS · ` +
+        `Skill ${stats.skill_rating ?? '—'}`
+    );
+
+
+    return stats;
+
+}
+
+// ======================================================
 // SINCRONIZAR LEAGUE MATCHES
 // ======================================================
 
@@ -2392,6 +4138,24 @@ async function syncEaLeagueMatches() {
     console.log('====================================');
     console.log('⚽ EA FC SYNC');
     console.log('====================================');
+        // --------------------------------------------------
+    // ATUALIZAR ESTATÍSTICAS GERAIS DO CLUBE
+    // --------------------------------------------------
+
+    try {
+
+        await syncEaClubStats();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            '❌ Erro ao atualizar estatísticas gerais da EA:',
+            error
+        );
+
+    }
 
 
     // --------------------------------------------------
@@ -2636,6 +4400,697 @@ client.on(
             interaction.options
                 .getSubcommand();
 
+        // ==================================================
+        // /ea migrarfotos
+        // ==================================================
+
+        if (
+            subcommand ===
+            'migrarfotos'
+        ) {
+
+            await interaction.deferReply({
+                ephemeral: true
+            });
+
+            try {
+
+                const CANAL_FOTOS_ID =
+                    '1550266416924721255';
+
+
+                // ==========================================
+                // PLANTEL ATUAL
+                // ==========================================
+
+                const {
+                    data: jogadores,
+                    error: erroJogadores
+                } = await supabase
+
+                    .from('players')
+
+                    .select(
+                        'id, name, number, photo_url'
+                    );
+
+
+                if (erroJogadores) {
+                    throw erroJogadores;
+                }
+
+
+                const normalizar =
+                    valor =>
+                        String(valor || '')
+                            .trim()
+                            .toLowerCase()
+                            .normalize('NFD')
+                            .replace(
+                                /[\u0300-\u036f]/g,
+                                ''
+                            );
+
+
+                // ==========================================
+                // CANAL DISCORD
+                // ==========================================
+
+                const canal =
+                    await client.channels.fetch(
+                        CANAL_FOTOS_ID
+                    );
+
+
+                if (
+                    !canal ||
+                    !canal.isTextBased()
+                ) {
+
+                    throw new Error(
+                        'Canal das fotografias não encontrado.'
+                    );
+
+                }
+
+
+                let before = undefined;
+
+                const candidatos = [];
+
+
+                // ==========================================
+                // PROCURAR CARTÕES ANTIGOS
+                // ==========================================
+
+                while (true) {
+
+                    const mensagens =
+                        await canal.messages.fetch({
+                            limit: 100,
+                            ...(before
+                                ? { before }
+                                : {})
+                        });
+
+
+                    if (
+                        mensagens.size === 0
+                    ) {
+                        break;
+                    }
+
+
+                    for (
+                        const mensagem
+                        of mensagens.values()
+                    ) {
+
+                        if (
+                            mensagem.author.id !==
+                            client.user.id
+                        ) {
+                            continue;
+                        }
+
+
+                        for (
+                            const embed
+                            of mensagem.embeds
+                        ) {
+
+                            const autor =
+                                embed.author?.name ||
+                                '';
+
+
+                            if (
+                                !autor.includes(
+                                    'SUAVE FC · PLANTEL'
+                                )
+                            ) {
+                                continue;
+                            }
+
+
+                            const titulo =
+                                embed.title || '';
+
+
+                            const imageUrl =
+                                embed.image?.url;
+
+
+                            if (
+                                !titulo ||
+                                !imageUrl
+                            ) {
+                                continue;
+                            }
+
+
+                            // Exemplo:
+                            // #23 · BRITO
+
+                            const match =
+                                titulo.match(
+                                    /^#(\d+)\s*·\s*(.+)$/i
+                                );
+
+
+                            if (!match) {
+                                continue;
+                            }
+
+
+                            candidatos.push({
+
+                                numero:
+                                    Number(match[1]),
+
+                                nome:
+                                    match[2].trim(),
+
+                                imageUrl,
+
+                                createdTimestamp:
+                                    mensagem.createdTimestamp
+
+                            });
+
+                        }
+
+                    }
+
+
+                    before =
+                        mensagens.last()?.id;
+
+
+                    if (
+                        mensagens.size < 100
+                    ) {
+                        break;
+                    }
+
+                }
+
+
+                // Mais recentes primeiro
+                candidatos.sort(
+                    (a, b) =>
+                        b.createdTimestamp -
+                        a.createdTimestamp
+                );
+
+
+                // ==========================================
+                // MIGRAR
+                // ==========================================
+
+                const resultados = [];
+
+
+                for (
+                    const jogador
+                    of jogadores || []
+                ) {
+
+                    const candidato =
+                        candidatos.find(
+                            item =>
+                                item.numero ===
+                                    Number(jogador.number) &&
+                                normalizar(item.nome) ===
+                                    normalizar(jogador.name)
+                        );
+
+
+                    if (!candidato) {
+
+                        resultados.push(
+                            `⚪ #${jogador.number} ${jogador.name} — não encontrei cartão`
+                        );
+
+                        continue;
+
+                    }
+
+
+                    try {
+
+                        // ==================================
+                        // DESCARREGAR DO DISCORD
+                        // ==================================
+
+                        const respostaFoto =
+                            await fetch(
+                                candidato.imageUrl
+                            );
+
+
+                        if (!respostaFoto.ok) {
+
+                            resultados.push(
+                                `🔴 #${jogador.number} ${jogador.name} — imagem indisponível`
+                            );
+
+                            continue;
+
+                        }
+
+
+                        const contentType =
+                            respostaFoto.headers.get(
+                                'content-type'
+                            ) ||
+                            'image/jpeg';
+
+
+                        const buffer =
+                            Buffer.from(
+                                await respostaFoto.arrayBuffer()
+                            );
+
+
+                        let extensao = 'jpg';
+
+
+                        if (
+                            contentType.includes('png')
+                        ) {
+                            extensao = 'png';
+                        }
+
+                        else if (
+                            contentType.includes('webp')
+                        ) {
+                            extensao = 'webp';
+                        }
+
+                        else if (
+                            contentType.includes('gif')
+                        ) {
+                            extensao = 'gif';
+                        }
+
+
+                        const caminho =
+                            `players/${jogador.id}.${extensao}`;
+
+
+                        // ==================================
+                        // UPLOAD SUPABASE STORAGE
+                        // ==================================
+
+                        const {
+                            error: erroUpload
+                        } = await supabase.storage
+
+                            .from(
+                                'player-photos'
+                            )
+
+                            .upload(
+                                caminho,
+                                buffer,
+                                {
+                                    contentType,
+                                    upsert: true
+                                }
+                            );
+
+
+                        if (erroUpload) {
+                            throw erroUpload;
+                        }
+
+
+                        // ==================================
+                        // URL PÚBLICO
+                        // ==================================
+
+                        const {
+                            data: publicData
+                        } = supabase.storage
+
+                            .from(
+                                'player-photos'
+                            )
+
+                            .getPublicUrl(
+                                caminho
+                            );
+
+
+                        const novaUrl =
+                            publicData.publicUrl;
+
+
+                        // ==================================
+                        // ATUALIZAR PLAYER
+                        // ==================================
+
+                        const {
+                            error: erroUpdate
+                        } = await supabase
+
+                            .from('players')
+
+                            .update({
+                                photo_url:
+                                    novaUrl
+                            })
+
+                            .eq(
+                                'id',
+                                jogador.id
+                            );
+
+
+                        if (erroUpdate) {
+                            throw erroUpdate;
+                        }
+
+
+                        resultados.push(
+                            `🟢 #${jogador.number} ${jogador.name} — MIGRADA`
+                        );
+
+                    }
+
+                    catch (error) {
+
+                        console.error(
+                            `❌ Migração ${jogador.name}:`,
+                            error
+                        );
+
+
+                        resultados.push(
+                            `🔴 #${jogador.number} ${jogador.name} — ERRO`
+                        );
+
+                    }
+
+                }
+
+
+                // ==========================================
+                // RESULTADO
+                // ==========================================
+
+                const migradas =
+                    resultados.filter(
+                        linha =>
+                            linha.includes(
+                                'MIGRADA'
+                            )
+                    ).length;
+
+
+                console.log('');
+                console.log(
+                    '===== MIGRAÇÃO FOTOS ====='
+                );
+
+                console.log(
+                    resultados.join('\n')
+                );
+
+                console.log(
+                    '=========================='
+                );
+
+
+                await interaction.editReply({
+
+                    content:
+                        `📸 **MIGRAÇÃO DAS FOTOS**\n\n` +
+                        `✅ Migradas: **${migradas}/${jogadores.length}**\n\n` +
+                        resultados.join('\n')
+
+                });
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    '❌ Erro na migração das fotos:',
+                    error
+                );
+
+
+                await interaction.editReply({
+                    content:
+                        '❌ A migração das fotografias falhou. Vê o CMD.'
+                });
+
+            }
+
+
+            return;
+
+        }
+
+        // ==================================================
+        // /ea procurarfotos
+        // ==================================================
+
+        if (
+            subcommand ===
+            'procurarfotos'
+        ) {
+
+            await interaction.deferReply({
+                ephemeral: true
+            });
+
+            try {
+
+                const CANAL_FOTOS_ID =
+                    '1550266416924721255';
+
+
+                const canal =
+                    await client.channels.fetch(
+                        CANAL_FOTOS_ID
+                    );
+
+
+                if (
+                    !canal ||
+                    !canal.isTextBased()
+                ) {
+
+                    throw new Error(
+                        'Canal das fotografias não encontrado.'
+                    );
+
+                }
+
+
+                let before = undefined;
+
+                let totalMensagens = 0;
+                let embedsPlantel = 0;
+                let fotosEncontradas = 0;
+                let fotosAcessiveis = 0;
+
+                const resultados = [];
+
+
+                while (true) {
+
+                    const mensagens =
+                        await canal.messages.fetch({
+                            limit: 100,
+                            ...(before
+                                ? { before }
+                                : {})
+                        });
+
+
+                    if (
+                        mensagens.size === 0
+                    ) {
+                        break;
+                    }
+
+
+                    totalMensagens +=
+                        mensagens.size;
+
+
+                    for (
+                        const mensagem
+                        of mensagens.values()
+                    ) {
+
+                        if (
+                            mensagem.author.id !==
+                            client.user.id
+                        ) {
+                            continue;
+                        }
+
+
+                        for (
+                            const embed
+                            of mensagem.embeds
+                        ) {
+
+                            const autor =
+                                embed.author?.name ||
+                                '';
+
+
+                            if (
+                                !autor.includes(
+                                    'SUAVE FC · PLANTEL'
+                                )
+                            ) {
+                                continue;
+                            }
+
+
+                            embedsPlantel++;
+
+
+                            const titulo =
+                                embed.title ||
+                                'Jogador desconhecido';
+
+
+                            const imageUrl =
+                                embed.image?.url;
+
+
+                            if (!imageUrl) {
+
+                                resultados.push(
+                                    `⚪ ${titulo} — sem imagem`
+                                );
+
+                                continue;
+
+                            }
+
+
+                            fotosEncontradas++;
+
+
+                            try {
+
+                                const resposta =
+                                    await fetch(
+                                        imageUrl
+                                    );
+
+
+                                if (resposta.ok) {
+
+                                    fotosAcessiveis++;
+
+                                    resultados.push(
+                                        `🟢 ${titulo} — RECUPERÁVEL`
+                                    );
+
+                                }
+
+                                else {
+
+                                    resultados.push(
+                                        `🔴 ${titulo} — expirou (${resposta.status})`
+                                    );
+
+                                }
+
+                            }
+
+                            catch {
+
+                                resultados.push(
+                                    `🔴 ${titulo} — erro ao testar`
+                                );
+
+                            }
+
+                        }
+
+                    }
+
+
+                    before =
+                        mensagens.last()?.id;
+
+
+                    if (
+                        mensagens.size < 100
+                    ) {
+                        break;
+                    }
+
+                }
+
+
+                console.log('');
+                console.log(
+                    '===== DIAGNÓSTICO FOTOS ====='
+                );
+
+                console.log(
+                    resultados.join('\n')
+                );
+
+                console.log(
+                    '============================='
+                );
+
+
+                const lista =
+                    resultados.length > 0
+                        ? resultados
+                            .slice(0, 30)
+                            .join('\n')
+                        : 'Nenhuma fotografia encontrada.';
+
+
+                await interaction.editReply({
+
+                    content:
+                        `📸 **DIAGNÓSTICO DAS FOTOS**\n\n` +
+                        `Mensagens analisadas: **${totalMensagens}**\n` +
+                        `Cartões de plantel: **${embedsPlantel}**\n` +
+                        `Fotos encontradas: **${fotosEncontradas}**\n` +
+                        `Fotos recuperáveis: **${fotosAcessiveis}**\n\n` +
+                        `${lista}\n\n` +
+                        `⚠️ Nenhuma fotografia foi alterada.`
+
+                });
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    '❌ Erro ao procurar fotos:',
+                    error
+                );
+
+
+                await interaction.editReply({
+                    content:
+                        '❌ Falhou o diagnóstico das fotografias. Vê o CMD.'
+                });
+
+            }
+
+
+            return;
+
+        }
 
         // ==================================================
         // /ea testarresultado

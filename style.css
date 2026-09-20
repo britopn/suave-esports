@@ -1881,3 +1881,398 @@ footer {
 .match-card.details-open .result-detail-back {
     margin-top: 10px;
 }
+
+/* =========================================================
+   DASHBOARD — DIVISÃO EA
+========================================================= */
+
+.dashboard-section .dashboard-grid {
+    grid-template-columns: 1.08fr .92fr;
+    gap: 32px;
+    align-items: stretch;
+}
+
+.division-panel,
+.statistics-panel {
+    min-width: 0;
+}
+
+
+/* =========================================================
+   CARTÃO DA DIVISÃO
+========================================================= */
+
+.division-card {
+    min-height: 316px;
+
+    display: flex;
+    flex-direction: column;
+
+    position: relative;
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle at 16% 28%,
+            rgba(214, 168, 79, .10),
+            transparent 32%
+        ),
+        linear-gradient(
+            135deg,
+            rgba(0, 60, 44, .32),
+            rgba(16, 24, 19, .98) 52%,
+            rgba(9, 16, 13, 1)
+        );
+
+    border: 1px solid var(--line);
+}
+
+.division-card::before {
+    content: "05";
+
+    position: absolute;
+    right: -18px;
+    top: -42px;
+
+    color: rgba(242, 211, 151, .025);
+
+    font-size: 220px;
+    font-weight: 900;
+    line-height: 1;
+
+    letter-spacing: -.08em;
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   PARTE PRINCIPAL
+========================================================= */
+
+.division-card-main {
+    flex: 1;
+
+    min-height: 215px;
+
+    padding: 28px 32px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 30px;
+
+    position: relative;
+    z-index: 1;
+}
+
+
+/* =========================================================
+   EMBLEMA / DIVISÃO
+========================================================= */
+
+.division-emblem {
+    width: 132px;
+    height: 150px;
+
+    flex: 0 0 132px;
+
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(242, 211, 151, .13),
+            rgba(242, 211, 151, .025)
+        );
+
+    border:
+        1px solid
+        rgba(242, 211, 151, .28);
+
+    clip-path:
+        polygon(
+            50% 0%,
+            91% 16%,
+            91% 70%,
+            50% 100%,
+            9% 70%,
+            9% 16%
+        );
+}
+
+.division-emblem::before {
+    content: "";
+
+    position: absolute;
+
+    inset: 9px;
+
+    clip-path:
+        polygon(
+            50% 0%,
+            91% 16%,
+            91% 70%,
+            50% 100%,
+            9% 70%,
+            9% 16%
+        );
+
+    border:
+        1px solid
+        rgba(242, 211, 151, .12);
+}
+
+.division-emblem-label {
+    position: relative;
+    z-index: 1;
+
+    color: var(--gold);
+
+    font-family: "DM Mono", monospace;
+
+    font-size: 8px;
+    font-weight: 500;
+
+    letter-spacing: .22em;
+}
+
+.division-emblem-number {
+    position: relative;
+    z-index: 1;
+
+    margin-top: 3px;
+
+    color: var(--cream);
+
+    font-size: 66px;
+    font-weight: 900;
+
+    line-height: .95;
+
+    letter-spacing: -.07em;
+}
+
+
+/* =========================================================
+   INFORMAÇÃO DA EQUIPA
+========================================================= */
+
+.division-club {
+    min-width: 0;
+}
+
+.division-status {
+    color: var(--gold);
+
+    font-family: "DM Mono", monospace;
+
+    font-size: 9px;
+    font-weight: 500;
+
+    letter-spacing: .20em;
+}
+
+.division-club h3 {
+    margin-top: 10px;
+
+    color: var(--white);
+
+    font-size: clamp(28px, 2.2vw, 40px);
+    font-weight: 900;
+
+    line-height: .95;
+
+    letter-spacing: -.05em;
+}
+
+.division-rank {
+    margin-top: 20px;
+
+    display: flex;
+    align-items: baseline;
+
+    gap: 9px;
+}
+
+.division-rank span {
+    color: var(--grey);
+
+    font-family: "DM Mono", monospace;
+
+    font-size: 9px;
+
+    letter-spacing: .14em;
+}
+
+.division-rank strong {
+    color: var(--cream);
+
+    font-family: "DM Mono", monospace;
+
+    font-size: 13px;
+
+    letter-spacing: .08em;
+}
+
+
+/* =========================================================
+   REGISTO DA ÉPOCA
+========================================================= */
+
+.division-record {
+    min-height: 100px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr)
+        1.25fr;
+
+    position: relative;
+    z-index: 1;
+
+    border-top: 1px solid var(--line);
+}
+
+.division-record-item {
+    min-width: 0;
+
+    padding: 17px 10px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    border-right: 1px solid var(--line);
+}
+
+.division-record-item:last-child {
+    border-right: 0;
+}
+
+.division-record-item span {
+    color: var(--grey);
+
+    font-family: "DM Mono", monospace;
+
+    font-size: 8px;
+
+    letter-spacing: .10em;
+}
+
+.division-record-item strong {
+    margin-top: 7px;
+
+    color: var(--white);
+
+    font-size: 23px;
+    font-weight: 900;
+
+    line-height: 1;
+}
+
+.division-points {
+    background:
+        rgba(242, 211, 151, .055);
+}
+
+.division-points strong {
+    color: var(--cream);
+}
+
+
+/* =========================================================
+   OS NÚMEROS
+========================================================= */
+
+.statistics-panel .stats-grid {
+    min-height: 316px;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+}
+
+.statistics-panel .stat {
+    min-height: 105px;
+}
+
+.statistics-panel .stat strong {
+    font-size: 36px;
+}
+
+.statistics-panel .stat span {
+    padding: 0 8px;
+
+    text-align: center;
+
+    line-height: 1.4;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1000px) {
+
+    .dashboard-section .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 55px;
+    }
+
+}
+
+
+@media (max-width: 650px) {
+
+    .division-card-main {
+        padding: 25px 20px;
+
+        gap: 18px;
+    }
+
+    .division-emblem {
+        width: 105px;
+        height: 122px;
+
+        flex-basis: 105px;
+    }
+
+    .division-emblem-number {
+        font-size: 52px;
+    }
+
+    .division-club h3 {
+        font-size: 27px;
+    }
+
+    .division-record {
+        grid-template-columns:
+            repeat(5, 1fr);
+    }
+
+    .division-record-item {
+        padding:
+            15px 4px;
+    }
+
+    .division-record-item span {
+        font-size: 6px;
+
+        letter-spacing: .05em;
+    }
+
+    .division-record-item strong {
+        font-size: 18px;
+    }
+
+}
