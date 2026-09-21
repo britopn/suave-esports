@@ -2276,3 +2276,590 @@ footer {
     }
 
 }
+
+/* =========================================================
+   HEADER — TEAM SUAVE SYSTEM
+========================================================= */
+
+.site-header {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 76px;
+
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+
+    align-items: center;
+
+    padding: 0 28px;
+
+    background: #0a0a0a;
+
+    border-bottom:
+        1px solid rgba(240, 238, 232, 0.18);
+
+    z-index: 1000;
+}
+
+
+/* SUAVE */
+
+.site-header .brand {
+    display: flex;
+    align-items: center;
+
+    width: fit-content;
+    height: auto;
+
+    padding: 0;
+
+    background: transparent;
+}
+
+.site-header .brand img {
+    display: block;
+
+    width: 145px;
+    height: auto;
+
+    object-fit: contain;
+}
+
+
+/* NAVEGAÇÃO */
+
+.site-header .main-nav {
+    display: flex;
+
+    align-items: center;
+
+    gap: 30px;
+}
+
+.site-header .main-nav a {
+    padding: 0;
+
+    border: 0;
+
+    font-family:
+        "Arial Narrow",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    letter-spacing: 1.5px;
+
+    color: #f0eee8;
+
+    opacity: 1;
+
+    transition:
+        opacity 0.2s ease;
+}
+
+.site-header .main-nav a:hover {
+    opacity: 0.5;
+}
+
+.site-header .main-nav a.active {
+    color: #f0eee8;
+}
+
+
+/* AV */
+
+.site-header .header-mark {
+    justify-self: end;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: flex-end;
+
+    width: auto;
+    height: auto;
+}
+
+.site-header .header-mark img {
+    display: block;
+
+    width: 38px;
+    height: 38px;
+
+    object-fit: contain;
+}
+
+
+/* COMPENSAR HEADER FIXO */
+
+body {
+    padding-top: 76px;
+}
+
+/* =========================================================
+   FIX — LOGO TEAM SUAVE NO HEADER
+========================================================= */
+
+.site-header .brand {
+    overflow: visible;
+}
+
+.site-header .brand img {
+    display: block;
+
+    width: 145px;
+    height: auto;
+
+    max-width: none;
+    max-height: none;
+
+    object-fit: contain;
+
+    border-radius: 0;
+
+    clip-path: none;
+
+    transform: none;
+
+    filter: none;
+}
+
+/* =========================================================
+   FOOTER — TEAM SUAVE SYSTEM
+========================================================= */
+
+.team-suave-footer {
+    min-height: 70vh;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    padding: 28px;
+
+    background: #0a0a0a;
+    color: #f0eee8;
+
+    overflow: hidden;
+}
+
+
+/* LOGO SUAVE GIGANTE */
+
+.team-suave-footer-word {
+    width: 100%;
+}
+
+.team-suave-footer-word img {
+    display: block;
+
+    width: 100%;
+    max-height: 42vh;
+
+    object-fit: contain;
+    object-position: left bottom;
+
+    border-radius: 0;
+    clip-path: none;
+
+    transform: none;
+    filter: none;
+}
+
+
+/* LINHA INFERIOR */
+
+.team-suave-footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-top: 70px;
+    padding-top: 18px;
+
+    border-top:
+        1px solid rgba(240, 238, 232, 0.18);
+
+    font-family:
+        "Arial Narrow",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: 1.5px;
+}
+
+/* =========================================================
+   FOOTER — TEAM SUAVE COMPACT
+========================================================= */
+
+footer.team-suave-footer {
+    width: 100%;
+    min-height: 0;
+
+    display: block;
+
+    padding: 0 28px;
+
+    background: #0a0a0a;
+    color: #f0eee8;
+
+    border-top:
+        1px solid rgba(240, 238, 232, 0.18);
+}
+
+
+/* LOGO */
+
+.team-suave-footer-word {
+    width: 100%;
+
+    padding:
+        55px 0 50px;
+}
+
+.team-suave-footer-word img {
+    display: block;
+
+    width: 145px;
+    height: auto;
+
+    max-width: none;
+    max-height: none;
+
+    object-fit: contain;
+
+    border-radius: 0;
+    clip-path: none;
+    transform: none;
+    filter: none;
+}
+
+
+/* LINHA INFERIOR */
+
+footer.team-suave-footer .team-suave-footer-bottom {
+    width: 100%;
+
+    display: grid;
+    grid-template-columns:
+        1fr 1fr 1fr;
+
+    align-items: center;
+
+    margin: 0;
+    padding:
+        18px 0 22px;
+
+    border-top:
+        1px solid rgba(240, 238, 232, 0.18);
+
+    font-family:
+        "Arial Narrow",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: 1.5px;
+}
+
+.team-suave-footer-bottom span:nth-child(1) {
+    justify-self: start;
+}
+
+.team-suave-footer-bottom span:nth-child(2) {
+    justify-self: center;
+}
+
+.team-suave-footer-bottom span:nth-child(3) {
+    justify-self: end;
+}
+
+/* =========================================================
+   FOOTER — TEAM SUAVE SYSTEM
+   SUAVEMENTE FC
+========================================================= */
+
+footer.team-suave-footer {
+    width: 100%;
+    min-height: 0;
+
+    display: block;
+
+    padding: 0 28px;
+
+    background: #0a0a0a;
+    color: #f0eee8;
+
+    overflow: visible;
+
+    border-top:
+        1px solid rgba(240, 238, 232, 0.18);
+}
+
+
+/* =========================================================
+   ÁREA PRINCIPAL
+========================================================= */
+
+.team-suave-footer .footer-main {
+    min-height: 190px;
+
+    display: grid;
+
+    grid-template-columns:
+        1.2fr
+        2fr
+        auto;
+
+    align-items: start;
+
+    gap: 80px;
+
+    padding:
+        42px 0 38px;
+}
+
+
+/* =========================================================
+   LOGO
+========================================================= */
+
+.team-suave-footer .footer-logo {
+    display: block;
+
+    width: fit-content;
+}
+
+
+.team-suave-footer .footer-logo img {
+    display: block;
+
+    width: 145px;
+    height: auto;
+
+    max-width: none;
+    max-height: none;
+
+    object-fit: contain;
+
+    border-radius: 0;
+    clip-path: none;
+
+    transform: none;
+    filter: none;
+}
+
+
+/* =========================================================
+   NAVEGAÇÃO — 3 COLUNAS / 2 LINKS
+========================================================= */
+
+.team-suave-footer .footer-nav {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(120px, 1fr));
+
+    gap: 70px;
+
+    width: 100%;
+    max-width: 760px;
+}
+
+
+.team-suave-footer .footer-nav-column {
+    display: flex;
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 16px;
+}
+
+
+.team-suave-footer .footer-nav a {
+    font-family:
+        "Arial Narrow",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    letter-spacing: 0.5px;
+
+    color: #f0eee8;
+
+    transition:
+        opacity 0.2s ease;
+}
+
+
+.team-suave-footer .footer-nav a:hover {
+    opacity: 0.5;
+}
+
+
+/* =========================================================
+   REDES SOCIAIS
+========================================================= */
+
+.team-suave-footer .footer-socials {
+    display: flex;
+
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 18px;
+}
+
+
+.team-suave-footer .footer-socials a {
+    width: 25px;
+    height: 25px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    color: #f0eee8;
+
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.team-suave-footer .footer-socials a:hover {
+    opacity: 0.55;
+
+    transform:
+        translateY(-2px);
+}
+
+
+.team-suave-footer .footer-socials svg {
+    display: block;
+
+    width: 22px;
+    height: 22px;
+
+    fill: none;
+
+    stroke: currentColor;
+    stroke-width: 1.8;
+
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+
+.team-suave-footer .footer-socials svg .social-fill {
+    fill: currentColor;
+    stroke: none;
+}
+
+
+/* =========================================================
+   BARRA INFERIOR
+========================================================= */
+
+footer.team-suave-footer .footer-bottom {
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    margin: 0;
+
+    padding:
+        17px 0 19px;
+
+    border-top:
+        1px solid rgba(240, 238, 232, 0.18);
+
+    font-family:
+        "Arial Narrow",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: 1px;
+
+    color: #f0eee8;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 800px) {
+
+    footer.team-suave-footer {
+        padding:
+            0 18px;
+    }
+
+
+    .team-suave-footer .footer-main {
+        min-height: 0;
+
+        grid-template-columns:
+            1fr;
+
+        gap: 38px;
+
+        padding:
+            40px 0;
+    }
+
+
+    .team-suave-footer .footer-logo img {
+        width: 125px;
+    }
+
+
+    .team-suave-footer .footer-nav {
+        max-width: none;
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+        gap: 30px;
+    }
+
+
+    .team-suave-footer .footer-socials {
+        justify-content: flex-start;
+    }
+
+
+    footer.team-suave-footer .footer-bottom {
+        gap: 20px;
+
+        font-size: 9px;
+    }
+
+}
